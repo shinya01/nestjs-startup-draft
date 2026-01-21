@@ -1,0 +1,19 @@
+version: '3.7'
+services:
+  nest:
+    build:
+      args:
+        - NODE_VER=25
+        ## x86_64 or aarch64
+        - ARCH=aarch64
+      context: .
+      dockerfile: Dockerfile
+    tty: true
+    volumes:
+      - ..:/apl
+      - ../node_modules:/home/node/app/node_modules
+    ports:
+      - "3000:3000"
+
+volumes:
+  node_modules:

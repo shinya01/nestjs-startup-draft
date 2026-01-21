@@ -1,0 +1,26 @@
+{
+    "name": "procject-dev",
+    "dockerComposeFile": [
+        "./docker-compose.yml"
+    ],
+    "service": "nest",
+    "workspaceFolder": "/apl",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "esbenp.prettier-vscode",
+                "dbaeumer.vscode-eslint",
+                "VisualStudioExptTeam.vscodeintellicode",
+                "christian-kohler.path-intellisense",
+                "mhutchie.git-graph",
+                "donjayamanne.githistory",
+                "oderwat.indent-rainbow",
+                "formulahendry.auto-rename-tag",
+                "vscode-icons-team.vscode-icons",
+                "MariusAlchimavicius.json-to-ts",
+                "wix.vscode-import-cost"
+            ]
+        }
+    },
+    "remoteUser": "root"
+}
