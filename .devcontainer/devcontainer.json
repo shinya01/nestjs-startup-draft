@@ -10,7 +10,6 @@
             "extensions": [
                 "esbenp.prettier-vscode",
                 "dbaeumer.vscode-eslint",
-                "VisualStudioExptTeam.vscodeintellicode",
                 "christian-kohler.path-intellisense",
                 "mhutchie.git-graph",
                 "donjayamanne.githistory",
@@ -18,7 +17,12 @@
                 "formulahendry.auto-rename-tag",
                 "vscode-icons-team.vscode-icons",
                 "MariusAlchimavicius.json-to-ts",
-                "wix.vscode-import-cost"
+                "wix.vscode-import-cost",
+                "eamodio.gitlens",
+                "codezombiech.gitignore",
+                "donjayamanne.git-extension-pack",
+                "github.vscode-github-actions",
+                "GitHub.copilot-chat"
             ]
         }
     },
