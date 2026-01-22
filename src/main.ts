@@ -5,8 +5,10 @@ import { AppModule } from './app.module';
 import { Logger } from 'nestjs-pino';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { initializeTransactionalContext } from 'typeorm-transactional-cls-hooked';
 
 async function bootstrap() {
+  initializeTransactionalContext();
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
   const configService = app.get(ConfigService);
@@ -20,7 +22,6 @@ async function bootstrap() {
   SwaggerModule.setup('swagger', app, documentFactory);
 
   const port = configService.get<number>('PORT') || 3000;
-  console.log(port);
   await app.listen(port);
 }
 void bootstrap();

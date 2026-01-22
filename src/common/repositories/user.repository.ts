@@ -22,7 +22,7 @@ export class UserRepository {
     return this.repo.save(user);
   }
 
-  delete(id: string) {
+  delete(id: number) {
     return this.repo.delete(id);
   }
 }

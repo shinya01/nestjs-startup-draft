@@ -22,7 +22,8 @@
                 "codezombiech.gitignore",
                 "donjayamanne.git-extension-pack",
                 "github.vscode-github-actions",
-                "GitHub.copilot-chat"
+                "GitHub.copilot-chat",
+                "cweijan.vscode-database-client2"
             ]
         }
     },
