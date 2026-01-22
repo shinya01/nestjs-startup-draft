@@ -1,5 +1,10 @@
 // src/config/configuration.ts
 export default () => ({
+  swagger: {
+    title: process.env.SWAGGER_TITLE,
+    description: process.env.SWAGGER_DESCRIPTION,
+    version: process.env.SWAGGER_VERSION,
+  },
   app: {
     env: process.env.NODE_ENV || 'development',
     port: parseInt(process.env.PORT || '3000', 10),
