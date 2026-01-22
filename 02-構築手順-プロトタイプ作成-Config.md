@@ -133,10 +133,9 @@ export default () => ({
 });
 ```
 
-.env.common
+.env
 ```
 # アプリケーション設定
-NODE_ENV=development
 PORT=3000
 
 # データベース（デフォルトはローカル）
@@ -150,9 +149,6 @@ JWT_EXPIRES_IN=1h
 
 .env.development
 ```
-# 開発用にポートを変えたい場合
-PORT=4000
-
 # ローカルDBの別インスタンスを使いたい場合
 DB_HOST=dev.db.example.com
 DB_USER=devuser
@@ -164,9 +160,6 @@ JWT_SECRET=devsecret
 
 .env.production
 ```
-NODE_ENV=production
-PORT=8080
-
 DB_HOST=prod.db.example.com
 DB_USER=produser
 DB_PASS=supersecret
@@ -177,10 +170,6 @@ JWT_EXPIRES_IN=15m
 
 .env.devcontainer
 ```
-# アプリケーション設定
-NODE_ENV=development
-PORT=3000
-
 # データベース（デフォルトはローカル）
 DB_HOST=db
 DB_USER=devuser
