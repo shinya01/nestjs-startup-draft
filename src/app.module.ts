@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './config/configuration';
 import { validationSchema } from './config/validation';
 
@@ -7,9 +8,23 @@ import { validationSchema } from './config/validation';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      ignoreEnvFile: true, // ← dotenv-flow で読み込むので NestJS 側では読み込まない
+      ignoreEnvFile: true,
       load: [configuration],
       validationSchema,
+    }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (config: ConfigService) => ({
+        type: 'postgres',
+        host: config.get('database.host'),
+        port: config.get('database.port'),
+        username: config.get('database.user'),
+        password: config.get('database.pass'),
+        database: config.get('database.name'),
+        entities: [__dirname + '/common/entities/*.entity{.ts,.js}'],
+        synchronize: false, // ← 絶対に true にしない！
+      }),
+      inject: [ConfigService],
     }),
   ],
 })

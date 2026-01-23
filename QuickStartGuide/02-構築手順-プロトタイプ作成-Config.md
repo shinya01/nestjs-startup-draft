@@ -197,11 +197,8 @@ export default () => ({
 ```
 PORT=3000
 NODE_ENV=development
-DB_HOST=your-db-host
 DB_PORT=5432
-DB_USER=your-db-user
-DB_PASS=your-db-pass
-DB_NAME=your-db-name
+DB_NAME=myapp
 ```
 
 ---
@@ -209,7 +206,6 @@ DB_NAME=your-db-name
 ### `.env.development`
 
 ```
-# ローカルDBの別インスタンスを使いたい場合
 DB_HOST=dev.db.example.com
 DB_USER=devuser
 DB_PASS=devpass
@@ -230,7 +226,6 @@ DB_PASS=supersecret
 ### `.env.devcontainer`
 
 ```
-# データベース（デフォルトはローカル）
 DB_HOST=db
 DB_USER=devuser
 DB_PASS=devpass
