@@ -16,6 +16,7 @@ NestJS のサンプルファイルを削除：
 
 - `app.controller.ts`
 - `app.controller.spec.ts`
+- `app.service.ts`
 
 ---
 
