@@ -1,20 +1,40 @@
-import { Controller, Get, Post, Param, Body, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  Delete,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from '../common/entities';
 import { CreateUserDto } from './dto/create-user.dto';
+import { JwtAuthGuard } from '../auth/guards';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiParam,
   ApiBody,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { UserIdParamDto } from './dto/user-id-param.dto';
 
 @ApiTags('Users')
 @Controller('users')
+@ApiBearerAuth('access-token')
+@UseGuards(JwtAuthGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
+
+  @Get('profile')
+  @ApiOperation({ summary: 'JWT情報取得' })
+  @ApiResponse({ status: 200 })
+  getProfile(@Request() req: { user?: User }): { user?: User } {
+    return { user: req?.user };
+  }
 
   @Get()
   @ApiOperation({ summary: '全ユーザーを取得' })

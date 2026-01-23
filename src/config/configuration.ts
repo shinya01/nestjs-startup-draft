@@ -8,6 +8,7 @@ export default () => ({
   app: {
     env: process.env.NODE_ENV || 'development',
     port: parseInt(process.env.PORT || '3000', 10),
+    authDisable: process.env.AUTH_DISABLE === 'true',
   },
   database: {
     host: process.env.DB_HOST,
@@ -16,5 +17,10 @@ export default () => ({
     pass: process.env.DB_PASS,
     name: process.env.DB_NAME,
     synchronize: process.env.TYPEORM_SYNCHRONIZE === 'true',
+  },
+  jwt: {
+    jwksUri: process.env.JWKS_URI,
+    issuer: process.env.JWT_ISSUER,
+    audience: process.env.JWT_AUDIENCE,
   },
 });

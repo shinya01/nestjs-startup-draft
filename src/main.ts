@@ -17,6 +17,15 @@ async function bootstrap() {
     .setTitle(configService.get<string>('swagger.title') || '')
     .setDescription(configService.get<string>('swagger.description') || '')
     .setVersion(configService.get<string>('swagger.version') || '')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'Enter your Auth0 access token here',
+      },
+      'access-token',
+    ) // ← この名前を後で使う！
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('swagger', app, documentFactory);
