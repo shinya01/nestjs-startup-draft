@@ -1,3 +1,7 @@
+# 07-構築手順 - プロトタイプ作成 - Module構成とバリデーション
+
+## 🧱 ディレクトリ構成（例）
+
 ```
 src/
 ├── common/
@@ -13,17 +17,26 @@ src/
 │   │   ├── create-user.dto.ts
 │   │   └── user-id-param.dto.ts
 │   ├── user.controller.ts
-│   ├── user.service  .ts
+│   ├── user.service.ts
 │   └── user.module.ts
 ```
 
-```
-npm i --save class-validator class-transformer
-npm install typeorm-transactional-cls-hooked
+---
+
+## 📦 必要なパッケージのインストール
+
+```bash
+npm install --save class-validator class-transformer
+npm install --save typeorm-transactional-cls-hooked
 ```
 
-user/dto/create-user.dto.ts
-```TypeScript
+---
+
+## 🧾 DTO の作成
+
+### `create-user.dto.ts`
+
+```ts
 import { IsEmail, IsNotEmpty, Length } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -39,56 +52,64 @@ export class CreateUserDto {
 }
 ```
 
+---
 
+### `user-id-param.dto.ts`
 
-パスパラメータの数値IDをバリデーションしたい場合
-```TypeScript
-// user/dto/user-id-param.dto.ts
+```ts
 import { IsInt } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
 export class UserIdParamDto {
   @ApiProperty({ example: 123 })
-  @Type(() => Number) // ← 文字列を数値に変換
+  @Type(() => Number)
   @IsInt()
   id: number;
 }
 ```
-※ この場合、main.ts の ValidationPipe に transform: true が必要！
 
-main.ts
-```TypeScript
+> 💡 `transform: true` を有効にすることで、パスパラメータの型変換が自動で行われるよ！
+
+---
+
+## 🚀 `main.ts` の設定
+
+```ts
 import * as dotenvFlow from 'dotenv-flow';
 dotenvFlow.config();
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger } from 'nestjs-pino';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ValidationPipe } from '@nestjs/common';
 import { initializeTransactionalContext } from 'typeorm-transactional-cls-hooked';
 
 async function bootstrap() {
-  initializeTransactionalContext(); // ← これが超重要！
+  initializeTransactionalContext();
+
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
-  // 追加 ここから
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       transform: true,
     }),
   );
-  // ここまで
+
   const configService = app.get(ConfigService);
 
-  const config = new DocumentBuilder()
+  const swaggerConfig = new DocumentBuilder()
     .setTitle(configService.get<string>('swagger.title') || '')
     .setDescription(configService.get<string>('swagger.description') || '')
     .setVersion(configService.get<string>('swagger.version') || '')
     .build();
-  const documentFactory = () => SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('swagger', app, documentFactory);
+
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('swagger', app, document);
 
   const port = configService.get<number>('PORT') || 3000;
   await app.listen(port);
@@ -96,12 +117,16 @@ async function bootstrap() {
 void bootstrap();
 ```
 
-user/user.controller.ts
-```TypeScript
+---
+
+## 🎮 `UserController` の実装
+
+```ts
 import { Controller, Get, Post, Param, Body, Delete } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from '../common/entities';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UserIdParamDto } from './dto/user-id-param.dto';
 import {
   ApiTags,
   ApiOperation,
@@ -109,7 +134,6 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
-import { UserIdParamDto } from './dto/user-id-param.dto';
 
 @ApiTags('Users')
 @Controller('users')
@@ -127,6 +151,7 @@ export class UserController {
   @ApiOperation({ summary: 'IDでユーザーを取得' })
   @ApiParam({ name: 'id', description: 'ユーザーID' })
   @ApiResponse({ status: 200, type: User })
+  @ApiResponse({ status: 404, description: 'ユーザーが見つかりませんでした' })
   getById(@Param() params: UserIdParamDto): Promise<User> {
     return this.userService.getById(params.id);
   }
@@ -135,6 +160,7 @@ export class UserController {
   @ApiOperation({ summary: '新しいユーザーを作成' })
   @ApiBody({ type: CreateUserDto })
   @ApiResponse({ status: 201, type: User })
+  @ApiResponse({ status: 400, description: 'バリデーションエラー' })
   create(@Body() body: CreateUserDto): Promise<User> {
     return this.userService.create(body);
   }
@@ -143,14 +169,55 @@ export class UserController {
   @ApiOperation({ summary: 'ユーザーを削除' })
   @ApiParam({ name: 'id', description: 'ユーザーID' })
   @ApiResponse({ status: 200, description: '削除成功' })
+  @ApiResponse({ status: 404, description: 'ユーザーが見つかりませんでした' })
   remove(@Param() params: UserIdParamDto): Promise<void> {
     return this.userService.remove(params.id);
   }
 }
 ```
 
-app.module.ts
-```TypeScript
+---
+
+## 🛠️ `UserService` の実装
+
+```ts
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { UserRepository } from '../common/repositories';
+import { User } from '../common/entities';
+import { CreateUserDto } from './dto/create-user.dto';
+import { Transactional } from 'typeorm-transactional-cls-hooked';
+
+@Injectable()
+export class UserService {
+  constructor(private readonly userRepo: UserRepository) {}
+
+  async getAll(): Promise<User[]> {
+    return this.userRepo.findAll();
+  }
+
+  async getById(id: number): Promise<User> {
+    const user = await this.userRepo.findById(id);
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+
+  @Transactional()
+  async create(data: CreateUserDto): Promise<User> {
+    return this.userRepo.save(data);
+  }
+
+  @Transactional()
+  async remove(id: number): Promise<void> {
+    await this.userRepo.delete(id);
+  }
+}
+```
+
+---
+
+## 🧩 `AppModule` に `UserModule` を追加
+
+```ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -197,8 +264,17 @@ import { UserModule } from './user/user.module';
             : undefined,
       },
     }),
-    UserModule, // ← 追加
+    UserModule,
   ],
 })
 export class AppModule {}
 ```
+
+---
+
+## ✅ 補足アドバイス
+
+- `@Transactional()` を使うことで、複数の DB 操作を安全にまとめて実行できるよ！
+- `ValidationPipe` の `whitelist: true` によって、DTO に定義されていないプロパティは自動で除外されるからセキュリティ的にも安心！
+- Swagger のエラーレスポンス（404, 400など）も明示しておくと、API 利用者にとって親切！
+- 今後、ユースケース層やレスポンス整形（Interceptor）を導入すれば、さらにクリーンな設計
