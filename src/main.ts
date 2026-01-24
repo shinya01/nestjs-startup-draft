@@ -9,6 +9,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { initializeTransactionalContext } from 'typeorm-transactional-cls-hooked';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { ErrorResponseDto } from './common/swagger/error-response.dto';
 
 async function bootstrap() {
   initializeTransactionalContext(); // トランザクションのコンテキスト初期化
@@ -21,7 +22,7 @@ async function bootstrap() {
       transform: true, // 型変換を有効化
     }),
   );
-  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalFilters(new HttpExceptionFilter()); // グローバル例外フィルター
 
   const configService = app.get(ConfigService);
 
@@ -33,7 +34,9 @@ async function bootstrap() {
     .setVersion(configService.get<string>('swagger.version') || '1.0')
     .build();
 
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  const document = SwaggerModule.createDocument(app, swaggerConfig, {
+    extraModels: [ErrorResponseDto], // 追加のモデルを登録
+  });
   SwaggerModule.setup('swagger', app, document);
 
   const port = configService.get<number>('PORT') || 3000;
