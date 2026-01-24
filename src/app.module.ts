@@ -1,10 +1,10 @@
+// app.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './config/configuration';
 import { validationSchema } from './config/validation';
 import { LoggerModule } from 'nestjs-pino';
-import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -44,7 +44,6 @@ import { UserModule } from './user/user.module';
             : undefined,
       },
     }),
-    UserModule,
   ],
 })
 export class AppModule {}

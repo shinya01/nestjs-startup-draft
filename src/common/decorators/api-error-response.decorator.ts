@@ -11,6 +11,11 @@ export function ApiErrorResponses() {
       type: ErrorResponseDto,
     }),
     ApiResponse({
+      status: 404,
+      description: 'リソースが見つかりません',
+      type: ErrorResponseDto,
+    }),
+    ApiResponse({
       status: 500,
       description: 'システムエラー',
       type: ErrorResponseDto,

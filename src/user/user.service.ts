@@ -1,8 +1,8 @@
-// src/user/user.service.ts
 import { Injectable } from '@nestjs/common';
 import { UserRepository } from '../common/repositories';
-import { User } from '../common/entities';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UserDto } from './dto/user.dto';
+import { plainToInstance } from 'class-transformer';
 import { Transactional } from 'typeorm-transactional-cls-hooked';
 import { BusinessException } from '../common/exceptions';
 import { BusinessErrorCodes } from '../common/constants/business-error-codes';
@@ -11,42 +11,26 @@ import { BusinessErrorCodes } from '../common/constants/business-error-codes';
 export class UserService {
   constructor(private readonly userRepo: UserRepository) {}
 
-  async getAll(): Promise<User[]> {
-    return this.userRepo.findAll();
+  async getAll(): Promise<UserDto[]> {
+    const users = await this.userRepo.findAll();
+    return plainToInstance(UserDto, users, { excludeExtraneousValues: true });
   }
 
-  async getById(id: number): Promise<User> {
+  async getById(id: number): Promise<UserDto> {
     const user = await this.userRepo.findById(id);
     if (!user) {
       throw new BusinessException(
-        BusinessErrorCodes.USER_NOT_FOUND,
+        BusinessErrorCodes.NOT_FOUND,
         `ユーザー（ID: ${id}）が見つかりませんでした`,
       );
     }
-    return user;
+
+    return plainToInstance(UserDto, user, { excludeExtraneousValues: true });
   }
 
   @Transactional()
-  async create(data: CreateUserDto): Promise<User> {
-    const exists = await this.userRepo.findByEmail(data.email);
-    if (exists) {
-      throw new BusinessException(
-        BusinessErrorCodes.USER_ALREADY_EXISTS,
-        'このメールアドレスは既に登録されています',
-      );
-    }
-    return this.userRepo.save(data);
-  }
-
-  @Transactional()
-  async remove(id: number): Promise<void> {
-    const user = await this.userRepo.findById(id);
-    if (!user) {
-      throw new BusinessException(
-        BusinessErrorCodes.USER_NOT_FOUND,
-        `ユーザー（ID: ${id}）が見つかりませんでした`,
-      );
-    }
-    await this.userRepo.delete(id);
+  async create(data: CreateUserDto): Promise<UserDto> {
+    const user = await this.userRepo.save(data);
+    return plainToInstance(UserDto, user, { excludeExtraneousValues: true });
   }
 }

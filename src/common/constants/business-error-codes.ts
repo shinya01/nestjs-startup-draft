@@ -1,7 +1,7 @@
 // src/common/constants/business-error-codes.ts
 export const BusinessErrorCodes = {
-  USER_ALREADY_EXISTS: 'USER_ALREADY_EXISTS',
-  USER_NOT_FOUND: 'USER_NOT_FOUND',
+  ALREADY_EXISTS: 'ALREADY_EXISTS',
+  NOT_FOUND: 'NOT_FOUND',
   INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
   EMAIL_REQUIRED: 'EMAIL_REQUIRED',
   // 必要に応じて追加

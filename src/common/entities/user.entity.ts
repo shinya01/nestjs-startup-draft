@@ -1,6 +1,6 @@
-// src/common/entities/user.entity.ts
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { Article } from './article.entity';
+import { Exclude } from 'class-transformer';
 
 @Entity()
 export class User {
@@ -14,6 +14,7 @@ export class User {
   email: string;
 
   @Column()
+  @Exclude()
   password: string;
 
   @OneToMany(() => Article, (article) => article.author)

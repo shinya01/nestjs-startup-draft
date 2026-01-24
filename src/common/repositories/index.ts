@@ -1,4 +1,6 @@
 import { UserRepository } from './user.repository';
+import { ArticleRepository } from './article.repository';
 
-export const REPOSITORIES = [UserRepository]; // 他のリポジトリもここに追加
-export { UserRepository }; // 個別インポート用にもエクスポート
+export const REPOSITORIES = [UserRepository, ArticleRepository];
+
+export { UserRepository, ArticleRepository };

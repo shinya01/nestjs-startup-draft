@@ -1,4 +1,3 @@
-// src/common/entities/article.entity.ts
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 import { User } from './user.entity';
 
@@ -13,6 +12,6 @@ export class Article {
   @Column()
   content: string;
 
-  @ManyToOne(() => User, (user: User) => user.articles)
+  @ManyToOne(() => User, (user) => user.articles, { nullable: false })
   author: User;
 }
