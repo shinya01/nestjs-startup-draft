@@ -12,6 +12,10 @@ export class UserService {
   constructor(private readonly userRepo: UserRepository) {}
 
   async getAll(): Promise<User[]> {
+    throw new BusinessException(
+      BusinessErrorCodes.USER_NOT_FOUND,
+      `ユーザー（IDが見つかりませんでした`,
+    );
     return this.userRepo.findAll();
   }
 

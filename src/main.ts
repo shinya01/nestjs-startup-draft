@@ -8,19 +8,20 @@ import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { initializeTransactionalContext } from 'typeorm-transactional-cls-hooked';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   initializeTransactionalContext(); // トランザクションのコンテキスト初期化
 
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
-
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true, // DTOに定義されていないプロパティを除外
       transform: true, // 型変換を有効化
     }),
   );
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   const configService = app.get(ConfigService);
 

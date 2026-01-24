@@ -6,7 +6,7 @@
       "request": "launch",
       "name": "Debug Nest Framework",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "start:debug"],
+      "runtimeArgs": ["run", "start:dev"],
       "cwd": "${workspaceFolder}",
       "sourceMaps": true,
       "console": "integratedTerminal",
