@@ -11,8 +11,10 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
+import { ApiErrorResponses } from '../common/decorators/api-error-response.decorator';
 
 @ApiTags('Users')
+@ApiErrorResponses()
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
