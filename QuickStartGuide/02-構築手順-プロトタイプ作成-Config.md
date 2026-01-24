@@ -196,7 +196,6 @@ export default () => ({
 
 ```
 PORT=3000
-NODE_ENV=development
 DB_PORT=5432
 DB_NAME=myapp
 ```
@@ -206,9 +205,11 @@ DB_NAME=myapp
 ### `.env.development`
 
 ```
+NODE_ENV=development
+
 DB_HOST=dev.db.example.com
 DB_USER=devuser
-DB_PASS=devpass
+DB_PASS=devspass
 ```
 
 ---
@@ -216,9 +217,11 @@ DB_PASS=devpass
 ### `.env.production`
 
 ```
+NODE_ENV=production
+
 DB_HOST=prod.db.example.com
 DB_USER=produser
-DB_PASS=supersecret
+DB_PASS=superpass
 ```
 
 ---
@@ -226,6 +229,8 @@ DB_PASS=supersecret
 ### `.env.devcontainer`
 
 ```
+NODE_ENV=devcontainer
+
 DB_HOST=db
 DB_USER=devuser
 DB_PASS=devpass

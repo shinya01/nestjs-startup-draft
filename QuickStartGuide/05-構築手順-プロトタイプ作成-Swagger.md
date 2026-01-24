@@ -18,16 +18,14 @@ npm install --save @nestjs/swagger
 ## ⚙️ `.env` に Swagger 用の環境変数を追加
 
 ```dotenv
-# Swagger 設定
+PORT=3000
+
+# 追加
 SWAGGER_TITLE=My Awesome API
 SWAGGER_DESCRIPTION=This is the best API server.
 SWAGGER_VERSION=1.0.0
 
-PORT=3000
-DB_HOST=localhost
 DB_PORT=5432
-DB_USER=devuser
-DB_PASS=devpass
 DB_NAME=myapp
 ```
 
@@ -53,7 +51,6 @@ export default () => ({
     user: process.env.DB_USER,
     pass: process.env.DB_PASS,
     name: process.env.DB_NAME,
-    synchronize: process.env.TYPEORM_SYNCHRONIZE === 'true',
   },
 });
 ```
@@ -82,10 +79,6 @@ export const validationSchema = Joi.object({
   DB_USER: Joi.string().required(),
   DB_PASS: Joi.string().required(),
   DB_NAME: Joi.string().required(),
-  TYPEORM_SYNCHRONIZE: Joi.boolean().default(false),
-
-  JWT_SECRET: Joi.string().required(),
-  JWT_EXPIRES_IN: Joi.string().default('1h'),
 });
 ```
 
