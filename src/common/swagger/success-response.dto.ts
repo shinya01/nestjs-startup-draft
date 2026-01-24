@@ -1,6 +1,7 @@
 // src/common/swagger/success-response.dto.ts
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiExtraModels } from '@nestjs/swagger';
 
+@ApiExtraModels()
 export class SuccessResponseDto {
   @ApiProperty({ example: true })
   success: boolean;

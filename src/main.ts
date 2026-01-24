@@ -11,6 +11,7 @@ import { initializeTransactionalContext } from 'typeorm-transactional-cls-hooked
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ResponseTransformInterceptor } from './common/interceptors/response-transform.interceptor';
 import { ErrorResponseDto } from './common/swagger/error-response.dto';
+import { SuccessResponseDto } from './common/swagger';
 
 async function bootstrap() {
   initializeTransactionalContext(); // トランザクションのコンテキスト初期化
@@ -37,7 +38,7 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig, {
-    extraModels: [ErrorResponseDto], // 追加のモデルを登録
+    extraModels: [SuccessResponseDto, ErrorResponseDto], // 追加のモデルを登録
   });
   SwaggerModule.setup('swagger', app, document);
 

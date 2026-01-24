@@ -5,6 +5,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './config/configuration';
 import { validationSchema } from './config/validation';
 import { LoggerModule } from 'nestjs-pino';
+import { UserModule } from './user/user.module';
+import { ArticleModule } from './article/article.module';
 
 @Module({
   imports: [
@@ -44,6 +46,8 @@ import { LoggerModule } from 'nestjs-pino';
             : undefined,
       },
     }),
+    UserModule,
+    ArticleModule,
   ],
 })
 export class AppModule {}

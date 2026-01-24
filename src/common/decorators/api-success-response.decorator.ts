@@ -1,6 +1,6 @@
 // src/common/decorators/api-success-response.decorator.ts
 import { applyDecorators, Type } from '@nestjs/common';
-import { ApiOkResponse, getSchemaPath } from '@nestjs/swagger';
+import { ApiOkResponse, getSchemaPath, ApiExtraModels } from '@nestjs/swagger';
 import { SuccessResponseDto } from '../swagger/success-response.dto';
 
 export function ApiSuccessResponse<TModel extends Type<unknown>>(
@@ -9,6 +9,7 @@ export function ApiSuccessResponse<TModel extends Type<unknown>>(
   description = '成功レスポンス',
 ) {
   return applyDecorators(
+    ApiExtraModels(SuccessResponseDto, model),
     ApiOkResponse({
       description,
       schema: {
@@ -17,7 +18,10 @@ export function ApiSuccessResponse<TModel extends Type<unknown>>(
           {
             properties: {
               data: isArray
-                ? { type: 'array', items: { $ref: getSchemaPath(model) } }
+                ? {
+                    type: 'array',
+                    items: { $ref: getSchemaPath(model) },
+                  }
                 : { $ref: getSchemaPath(model) },
             },
           },
