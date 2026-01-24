@@ -1,9 +1,11 @@
 // src/user/user.service.ts
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UserRepository } from '../common/repositories';
 import { User } from '../common/entities';
 import { CreateUserDto } from './dto/create-user.dto';
 import { Transactional } from 'typeorm-transactional-cls-hooked';
+import { BusinessException } from '../common/exceptions';
+import { BusinessErrorCodes } from '../common/constants/business-error-codes';
 
 @Injectable()
 export class UserService {
@@ -15,19 +17,36 @@ export class UserService {
 
   async getById(id: number): Promise<User> {
     const user = await this.userRepo.findById(id);
-    if (!user) throw new NotFoundException('User not found'); // 404エラーとして返される
+    if (!user) {
+      throw new BusinessException(
+        BusinessErrorCodes.USER_NOT_FOUND,
+        `ユーザー（ID: ${id}）が見つかりませんでした`,
+      );
+    }
     return user;
   }
 
-  @Transactional() // DB変更を伴う処理には必ず付ける
+  @Transactional()
   async create(data: CreateUserDto): Promise<User> {
+    const exists = await this.userRepo.findByEmail(data.email);
+    if (exists) {
+      throw new BusinessException(
+        BusinessErrorCodes.USER_ALREADY_EXISTS,
+        'このメールアドレスは既に登録されています',
+      );
+    }
     return this.userRepo.save(data);
   }
 
   @Transactional()
   async remove(id: number): Promise<void> {
     const user = await this.userRepo.findById(id);
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) {
+      throw new BusinessException(
+        BusinessErrorCodes.USER_NOT_FOUND,
+        `ユーザー（ID: ${id}）が見つかりませんでした`,
+      );
+    }
     await this.userRepo.delete(id);
   }
 }

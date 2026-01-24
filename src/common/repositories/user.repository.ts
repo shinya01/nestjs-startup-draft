@@ -11,19 +11,23 @@ export class UserRepository {
     private readonly repo: Repository<User>,
   ) {}
 
-  findAll() {
+  findAll(): Promise<User[]> {
     return this.repo.find();
   }
 
-  findById(id: number) {
+  findById(id: number): Promise<User | null> {
     return this.repo.findOneBy({ id });
   }
 
-  save(user: Partial<User>) {
+  findByEmail(email: string): Promise<User | null> {
+    return this.repo.findOneBy({ email });
+  }
+
+  save(user: Partial<User>): Promise<User> {
     return this.repo.save(user);
   }
 
-  delete(id: number) {
-    return this.repo.delete(id);
+  async delete(id: number): Promise<void> {
+    await this.repo.delete(id);
   }
 }
