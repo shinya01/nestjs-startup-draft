@@ -6,6 +6,13 @@ import { ConfigService } from '@nestjs/config';
 import type { SecretOrKeyProvider } from 'passport-jwt';
 import { InvalidTokenException } from '../../common/exceptions';
 import { UserService } from 'src/user/user.service';
+import { HttpService } from '@nestjs/axios';
+// import { lastValueFrom } from 'rxjs';
+import {
+  CognitoIdentityProviderClient,
+  GetUserCommand,
+} from '@aws-sdk/client-cognito-identity-provider';
+import { UserDto } from 'src/user/dto/user.dto';
 
 interface Claim {
   sub: string;
@@ -24,6 +31,7 @@ export class JwtStrategy extends PassportStrategy(JwtStrategyBase) {
   constructor(
     private readonly configService: ConfigService,
     private readonly userService: UserService,
+    private readonly httpService: HttpService,
   ) {
     const disableAuth = configService.get<boolean>('app.authDisable');
     if (disableAuth) {
@@ -36,7 +44,7 @@ export class JwtStrategy extends PassportStrategy(JwtStrategyBase) {
       return;
     }
     const jwksUri = configService.get<string>('jwt.jwksUri') || '';
-    const audience = configService.get<string>('jwt.audience') || '';
+    // const audience = configService.get<string>('jwt.audience') || ''; // Cognitoの場合、audienceチェックをしない
     const issuer = configService.get<string>('jwt.issuer') || '';
     const jwksSecret: SecretOrKeyProvider = jwksRsa.passportJwtSecret({
       cache: true,
@@ -49,27 +57,65 @@ export class JwtStrategy extends PassportStrategy(JwtStrategyBase) {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKeyProvider: jwksSecret,
-      audience,
+      // audience, // Cognitoの場合、audienceチェックをしない
       issuer,
       algorithms: ['RS256'],
+      passReqToCallback: true,
     });
   }
 
-  async validate(payload: Claim) {
-    // Ensure the token is an access token
-    if (payload.token_use !== 'access') {
-      throw new InvalidTokenException();
-    }
-    // Basic validation of required claims
-    if (!payload.sub || !payload.email) {
-      throw new InvalidTokenException();
-    }
+  async validate(req: Request, payload: Claim) {
     // req.user will be set to the return value of this method
     // You can customize the returned object as needed
-    const user = await this.userService.findOrCreateByExternalId(
-      payload.sub,
-      payload.email,
-    );
+
+    const sub = payload.sub;
+    // Ensure the token is an access token
+    if (!sub || payload.token_use !== 'access') {
+      throw new InvalidTokenException();
+    }
+    // Cognito特有のクライアントID（audience）チェック
+    const audience = this.configService.get<string>('jwt.audience') ?? '';
+    if (payload.client_id !== audience) {
+      throw new InvalidTokenException();
+    }
+    let user: UserDto | null = null;
+    try {
+      user = await this.userService.findByExternalId(sub);
+    } catch {
+      /* empty */
+    }
+    if (!user) {
+      const client = new CognitoIdentityProviderClient({
+        region: 'ap-northeast-1',
+      });
+      const token = ExtractJwt.fromAuthHeaderAsBearerToken()(req) || '';
+      const command = new GetUserCommand({
+        AccessToken: token, // curlで取得した AccessToken をそのまま渡す
+      });
+      try {
+        const response = await client.send(command);
+        const email = response.UserAttributes?.find(
+          (attr) => attr.Name === 'email',
+        )?.Value;
+        const name =
+          response.UserAttributes?.find((attr) => attr.Name === 'name')
+            ?.Value || email;
+        if (!email || !name) {
+          throw new InvalidTokenException();
+        }
+        user = await this.userService.findOrCreateByExternalId(
+          sub,
+          name,
+          email,
+        );
+      } catch (error) {
+        console.log(error);
+        throw new InvalidTokenException();
+      }
+    }
+    if (!user) {
+      throw new InvalidTokenException();
+    }
 
     return {
       userId: user.id,

@@ -8,6 +8,8 @@ import { LoggerModule } from 'nestjs-pino';
 import { UserModule } from './user/user.module';
 import { ArticleModule } from './article/article.module';
 import { AuthModule } from './auth/auth.module';
+import { DataSource } from 'typeorm';
+import { addTransactionalDataSource } from 'typeorm-transactional';
 
 @Module({
   imports: [
@@ -28,7 +30,20 @@ import { AuthModule } from './auth/auth.module';
         database: config.get('database.name'),
         entities: [__dirname + '/common/entities/*.entity{.ts,.js}'],
         synchronize: config.get('database.synchronize'),
+        degug: true,
       }),
+      dataSourceFactory: async (options) => {
+        if (!options) throw new Error('Invalid options passed');
+
+        // 1. DataSourceのインスタンスを作成
+        const dataSource = new DataSource(options);
+
+        // 2. 明示的に初期化を待機（これでESLintの警告が消えます）
+        await dataSource.initialize();
+
+        // 3. トランザクション管理下に登録して返す
+        return addTransactionalDataSource(dataSource);
+      },
       inject: [ConfigService],
     }),
     LoggerModule.forRoot({

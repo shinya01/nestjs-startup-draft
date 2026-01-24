@@ -13,11 +13,7 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column()
-  @Exclude()
-  password: string;
-
-  @Column({ unique: true })
+  @Column({ unique: true, nullable: true })
   externalId: string;
 
   @OneToMany(() => Article, (article) => article.author)

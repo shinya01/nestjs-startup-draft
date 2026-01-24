@@ -7,14 +7,14 @@ import { Logger } from 'nestjs-pino';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
-import { initializeTransactionalContext } from 'typeorm-transactional-cls-hooked';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ResponseTransformInterceptor } from './common/interceptors/response-transform.interceptor';
 import { ErrorResponseDto } from './common/swagger/error-response.dto';
 import { SuccessResponseDto } from './common/swagger';
+import { initializeTransactionalContext } from 'typeorm-transactional';
 
 async function bootstrap() {
-  initializeTransactionalContext(); // トランザクションのコンテキスト初期化
+  initializeTransactionalContext();
 
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));

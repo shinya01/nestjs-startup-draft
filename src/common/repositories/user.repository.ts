@@ -1,4 +1,3 @@
-// src/common/repositories/user.repository.ts
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -23,8 +22,8 @@ export class UserRepository {
     return this.repo.findOneBy({ email });
   }
 
-  findByExternalId(sub: string): Promise<User | null> {
-    return this.repo.findOne({ where: { externalId: sub } });
+  findByExternalId(externalId: string): Promise<User | null> {
+    return this.repo.findOne({ where: { externalId } });
   }
 
   save(user: Partial<User>): Promise<User> {

@@ -21,4 +21,5 @@ export const validationSchema = Joi.object({
   JWKS_URI: Joi.string().uri().required(),
   JWT_ISSUER: Joi.string().uri().required(),
   JWT_AUDIENCE: Joi.string().required(),
+  JWT_USER_INFO_ENDPOINT: Joi.string().uri().required(),
 });

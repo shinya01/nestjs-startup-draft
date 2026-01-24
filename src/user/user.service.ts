@@ -4,9 +4,9 @@ import { UserRepository } from '../common/repositories';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserDto } from './dto/user.dto';
 import { plainToInstance } from 'class-transformer';
-import { Transactional } from 'typeorm-transactional-cls-hooked';
 import { BusinessException } from '../common/exceptions';
 import { BusinessErrorCodes } from '../common/constants/business-error-codes';
+import { Transactional } from 'typeorm-transactional';
 
 @Injectable()
 export class UserService {
@@ -29,15 +29,29 @@ export class UserService {
     return plainToInstance(UserDto, user, { excludeExtraneousValues: true });
   }
 
+  async findByExternalId(externalId: string): Promise<UserDto> {
+    const user = await this.userRepo.findByExternalId(externalId);
+    if (!user) {
+      throw new BusinessException(
+        BusinessErrorCodes.NOT_FOUND,
+        `ユーザー（外部ID: ${externalId}）が見つかりませんでした`,
+      );
+    }
+
+    return plainToInstance(UserDto, user, { excludeExtraneousValues: true });
+  }
+
   @Transactional()
   async findOrCreateByExternalId(
     externalId: string,
+    name: string,
     email: string,
   ): Promise<UserDto> {
     const user = await this.userRepo.findByExternalId(externalId);
     if (!user) {
       const newUser = await this.userRepo.save({
         externalId: externalId,
+        name,
         email,
       });
       return plainToInstance(UserDto, newUser, {

@@ -14,6 +14,7 @@ export default () => ({
     jwksUri: process.env.JWKS_URI,
     issuer: process.env.JWT_ISSUER,
     audience: process.env.JWT_AUDIENCE,
+    userInfoEndpoint: process.env.JWT_USER_INFO_ENDPOINT,
   },
   database: {
     host: process.env.DB_HOST,
