@@ -1,4 +1,3 @@
-// main.ts
 import * as dotenvFlow from 'dotenv-flow';
 dotenvFlow.config();
 
@@ -7,17 +6,30 @@ import { AppModule } from './app.module';
 import { Logger } from 'nestjs-pino';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ValidationPipe } from '@nestjs/common';
+import { initializeTransactionalContext } from 'typeorm-transactional-cls-hooked';
 
 async function bootstrap() {
+  initializeTransactionalContext(); // トランザクションのコンテキスト初期化
+
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // DTOに定義されていないプロパティを除外
+      transform: true, // 型変換を有効化
+    }),
+  );
 
   const configService = app.get(ConfigService);
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle(configService.get<string>('swagger.title') || '')
-    .setDescription(configService.get<string>('swagger.description') || '')
-    .setVersion(configService.get<string>('swagger.version') || '')
+    .setTitle(configService.get<string>('swagger.title') || 'My API')
+    .setDescription(
+      configService.get<string>('swagger.description') || 'API documentation',
+    )
+    .setVersion(configService.get<string>('swagger.version') || '1.0')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
