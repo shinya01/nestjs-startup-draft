@@ -1,8 +1,10 @@
+// app.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './config/configuration';
 import { validationSchema } from './config/validation';
+import { LoggerModule } from 'nestjs-pino';
 
 @Module({
   imports: [
@@ -22,9 +24,25 @@ import { validationSchema } from './config/validation';
         password: config.get('database.pass'),
         database: config.get('database.name'),
         entities: [__dirname + '/common/entities/*.entity{.ts,.js}'],
-        synchronize: false, // ← 絶対に true にしない！
+        synchronize: config.get('database.synchronize'),
       }),
       inject: [ConfigService],
+    }),
+    LoggerModule.forRoot({
+      pinoHttp: {
+        level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+        transport:
+          process.env.NODE_ENV !== 'production'
+            ? {
+                target: 'pino-pretty',
+                options: {
+                  colorize: true,
+                  translateTime: 'SYS:standard',
+                  ignore: 'pid,hostname',
+                },
+              }
+            : undefined,
+      },
     }),
   ],
 })
