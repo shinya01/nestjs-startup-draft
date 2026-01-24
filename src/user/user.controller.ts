@@ -13,14 +13,14 @@ export class UserController {
 
   @Get()
   @ApiOperation({ summary: '全ユーザーを取得' })
-  @ApiSuccessResponse(UserDto, true)
+  @ApiSuccessResponse({ model: UserDto, isArray: true })
   getAll() {
     return this.userService.getAll();
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'IDでユーザーを取得' })
-  @ApiSuccessResponse(UserDto)
+  @ApiSuccessResponse({ model: UserDto })
   getById(@Param('id') id: number) {
     return this.userService.getById(Number(id));
   }
@@ -28,7 +28,11 @@ export class UserController {
   @Post()
   @ApiOperation({ summary: 'ユーザーを作成' })
   @ApiBody({ type: CreateUserDto })
-  @ApiSuccessResponse(UserDto)
+  @ApiSuccessResponse({
+    model: UserDto,
+    description: 'ユーザー作成成功',
+    statusCode: 201,
+  })
   create(@Body() body: CreateUserDto) {
     return this.userService.create(body);
   }

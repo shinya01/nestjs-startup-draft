@@ -20,16 +20,20 @@ export class ResponseTransformInterceptor<
   ): Observable<SuccessResponse<T>> {
     const ctx = context.switchToHttp();
     const request: Request = ctx.getRequest();
-    const response = ctx.getResponse<Response>();
+    const response: Response = ctx.getResponse();
 
     return next.handle().pipe(
-      map((data: T) => ({
-        success: true,
-        statusCode: response.statusCode,
-        timestamp: new Date().toISOString(),
-        path: request.url,
-        data,
-      })),
+      map((data: T): SuccessResponse<T> => {
+        const base = {
+          success: true,
+          statusCode: response.statusCode,
+          timestamp: new Date().toISOString(),
+          path: request.url,
+        };
+        return response.statusCode === 204
+          ? (base as SuccessResponse<T>)
+          : { ...base, data };
+      }),
     );
   }
 }

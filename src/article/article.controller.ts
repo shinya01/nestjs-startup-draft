@@ -13,7 +13,7 @@ export class ArticleController {
 
   @Get()
   @ApiOperation({ summary: '全記事を取得' })
-  @ApiSuccessResponse(ArticleDto, true)
+  @ApiSuccessResponse({ model: ArticleDto, isArray: true })
   getAll() {
     return this.articleService.getAll();
   }
@@ -21,7 +21,11 @@ export class ArticleController {
   @Post()
   @ApiOperation({ summary: '記事を作成' })
   @ApiBody({ type: CreateArticleDto })
-  @ApiSuccessResponse(ArticleDto)
+  @ApiSuccessResponse({
+    model: ArticleDto,
+    description: '記事作成成功',
+    statusCode: 201,
+  })
   create(@Body() body: CreateArticleDto) {
     return this.articleService.create(body);
   }

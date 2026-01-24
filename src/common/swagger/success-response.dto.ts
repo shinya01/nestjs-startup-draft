@@ -15,6 +15,10 @@ export class SuccessResponseDto {
   @ApiProperty({ example: '/users' })
   path: string;
 
-  @ApiProperty({ description: 'レスポンスデータ' })
+  @ApiProperty({
+    description: 'レスポンスデータ',
+    type: Object,
+    nullable: true,
+  })
   data: any;
 }
