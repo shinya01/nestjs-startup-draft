@@ -9,6 +9,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { initializeTransactionalContext } from 'typeorm-transactional-cls-hooked';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { ResponseTransformInterceptor } from './common/interceptors/response-transform.interceptor';
 
 async function bootstrap() {
   initializeTransactionalContext(); // トランザクションのコンテキスト初期化
@@ -21,7 +22,8 @@ async function bootstrap() {
       transform: true, // 型変換を有効化
     }),
   );
-  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalFilters(new HttpExceptionFilter()); // HTTP例外フィルター
+  app.useGlobalInterceptors(new ResponseTransformInterceptor()); // レスポンス変換グローバルインターセプター
 
   const configService = app.get(ConfigService);
 
