@@ -23,6 +23,10 @@ export class UserRepository {
     return this.repo.findOneBy({ email });
   }
 
+  findByExternalId(sub: string): Promise<User | null> {
+    return this.repo.findOne({ where: { externalId: sub } });
+  }
+
   save(user: Partial<User>): Promise<User> {
     return this.repo.save(user);
   }

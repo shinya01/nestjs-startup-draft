@@ -1,3 +1,4 @@
+// src/user/user.service.ts
 import { Injectable } from '@nestjs/common';
 import { UserRepository } from '../common/repositories';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -26,6 +27,26 @@ export class UserService {
     }
 
     return plainToInstance(UserDto, user, { excludeExtraneousValues: true });
+  }
+
+  @Transactional()
+  async findOrCreateByExternalId(
+    externalId: string,
+    email: string,
+  ): Promise<UserDto> {
+    const user = await this.userRepo.findByExternalId(externalId);
+    if (!user) {
+      const newUser = await this.userRepo.save({
+        externalId: externalId,
+        email,
+      });
+      return plainToInstance(UserDto, newUser, {
+        excludeExtraneousValues: true,
+      });
+    } else {
+      await this.userRepo.save(user);
+      return plainToInstance(UserDto, user, { excludeExtraneousValues: true });
+    }
   }
 
   @Transactional()

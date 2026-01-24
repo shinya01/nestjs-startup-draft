@@ -17,6 +17,9 @@ export class User {
   @Exclude()
   password: string;
 
+  @Column({ unique: true })
+  externalId: string;
+
   @OneToMany(() => Article, (article) => article.author)
   articles: Article[];
 }

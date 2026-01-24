@@ -220,7 +220,17 @@ interface Claim {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(JwtStrategyBase) {
-  constructor(configService: ConfigService) {
+  constructor(private readonly configService: ConfigService) {
+    const disableAuth = configService.get<boolean>('app.authDisable');
+    if (disableAuth) {
+      // 認証無効モード：ダミー設定で初期化
+      super({
+        jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+        ignoreExpiration: true,
+        secretOrKey: 'dummy-secret', // 実際には使われない
+      });
+      return;
+    }
     const jwksUri = configService.get<string>('jwt.jwksUri') || '';
     const audience = configService.get<string>('jwt.audience') || '';
     const issuer = configService.get<string>('jwt.issuer') || '';

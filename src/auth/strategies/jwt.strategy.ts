@@ -5,6 +5,7 @@ import * as jwksRsa from 'jwks-rsa';
 import { ConfigService } from '@nestjs/config';
 import type { SecretOrKeyProvider } from 'passport-jwt';
 import { InvalidTokenException } from '../../common/exceptions';
+import { UserService } from 'src/user/user.service';
 
 interface Claim {
   sub: string;
@@ -20,7 +21,20 @@ interface Claim {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(JwtStrategyBase) {
-  constructor(configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly userService: UserService,
+  ) {
+    const disableAuth = configService.get<boolean>('app.authDisable');
+    if (disableAuth) {
+      // 認証無効モード：ダミー設定で初期化
+      super({
+        jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+        ignoreExpiration: true,
+        secretOrKey: 'dummy-secret', // 実際には使われない
+      });
+      return;
+    }
     const jwksUri = configService.get<string>('jwt.jwksUri') || '';
     const audience = configService.get<string>('jwt.audience') || '';
     const issuer = configService.get<string>('jwt.issuer') || '';
@@ -41,7 +55,7 @@ export class JwtStrategy extends PassportStrategy(JwtStrategyBase) {
     });
   }
 
-  validate(payload: Claim) {
+  async validate(payload: Claim) {
     // Ensure the token is an access token
     if (payload.token_use !== 'access') {
       throw new InvalidTokenException();
@@ -52,9 +66,14 @@ export class JwtStrategy extends PassportStrategy(JwtStrategyBase) {
     }
     // req.user will be set to the return value of this method
     // You can customize the returned object as needed
+    const user = await this.userService.findOrCreateByExternalId(
+      payload.sub,
+      payload.email,
+    );
+
     return {
-      userId: payload.sub,
-      email: payload.email,
+      userId: user.id,
+      email: user.email,
       roles: payload['cognito:groups'] || [],
     };
   }
