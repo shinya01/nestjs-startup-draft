@@ -7,6 +7,7 @@ import { validationSchema } from './config/validation';
 import { LoggerModule } from 'nestjs-pino';
 import { UserModule } from './user/user.module';
 import { ArticleModule } from './article/article.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { ArticleModule } from './article/article.module';
     }),
     UserModule,
     ArticleModule,
+    AuthModule,
   ],
 })
 export class AppModule {}

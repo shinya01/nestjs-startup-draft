@@ -1,11 +1,19 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
 import { ArticleService } from './article.service';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { ArticleDto } from './dto/article.dto';
-import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
-import { ApiErrorResponses, ApiSuccessResponse } from '../common/decorators';
+import { ApiTags, ApiOperation, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiAuthErrorResponses,
+  ApiErrorResponses,
+  ApiSuccessResponse,
+} from '../common/decorators';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('Articles')
+@ApiBearerAuth('access-token')
+@UseGuards(JwtAuthGuard)
+@ApiAuthErrorResponses()
 @ApiErrorResponses()
 @Controller('articles')
 export class ArticleController {

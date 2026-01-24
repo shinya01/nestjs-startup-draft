@@ -25,12 +25,17 @@ export class HttpExceptionFilter implements ExceptionFilter {
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
     const message = this.extractMessage(exception);
+
     const responseBody: Record<string, any> = {
       success: false,
       statusCode: status,
       timestamp: new Date().toISOString(),
       path: request.url,
       message,
+      error:
+        exception instanceof HttpException
+          ? exception.name
+          : 'InternalServerError',
     };
 
     if (exception instanceof BusinessException) {
@@ -41,18 +46,21 @@ export class HttpExceptionFilter implements ExceptionFilter {
         code: exception.code,
         message,
         cause: exception.cause,
+        statusCode: status,
         path: request.url,
       });
     } else if (exception instanceof HttpException) {
       logger.error({
         type: 'HttpException',
         message,
+        statusCode: status,
         path: request.url,
       });
     } else {
       logger.error({
         type: 'UnknownException',
         message,
+        statusCode: status,
         path: request.url,
       });
     }
@@ -74,6 +82,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
       return exception.message;
     }
 
-    return 'Internal server error';
+    return 'An unexpected error occurred';
   }
 }

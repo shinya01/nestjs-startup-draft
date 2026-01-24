@@ -1,11 +1,25 @@
-import { Controller, Get, Post, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserDto } from './dto/user.dto';
-import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
-import { ApiErrorResponses, ApiSuccessResponse } from '../common/decorators';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBody,
+  ApiBearerAuth,
+  ApiParam,
+} from '@nestjs/swagger';
+import {
+  ApiAuthErrorResponses,
+  ApiErrorResponses,
+  ApiSuccessResponse,
+} from '../common/decorators';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('Users')
+@ApiBearerAuth('access-token')
+@UseGuards(JwtAuthGuard)
+@ApiAuthErrorResponses()
 @ApiErrorResponses()
 @Controller('users')
 export class UserController {
@@ -14,14 +28,15 @@ export class UserController {
   @Get()
   @ApiOperation({ summary: '全ユーザーを取得' })
   @ApiSuccessResponse({ model: UserDto, isArray: true })
-  getAll() {
+  getAll(): Promise<UserDto[]> {
     return this.userService.getAll();
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'IDでユーザーを取得' })
+  @ApiParam({ name: 'id', description: 'ユーザーID' })
   @ApiSuccessResponse({ model: UserDto })
-  getById(@Param('id') id: number) {
+  getById(@Param('id') id: number): Promise<UserDto> {
     return this.userService.getById(Number(id));
   }
 
@@ -33,7 +48,7 @@ export class UserController {
     description: 'ユーザー作成成功',
     statusCode: 201,
   })
-  create(@Body() body: CreateUserDto) {
+  create(@Body() body: CreateUserDto): Promise<UserDto> {
     return this.userService.create(body);
   }
 }

@@ -218,7 +218,12 @@ import { Controller, Get, Post, Param, Body } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserDto } from './dto/user.dto';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBody,
+  ApiParam,
+} from '@nestjs/swagger';
 
 @ApiTags('Users')
 @Controller('users')
@@ -234,6 +239,7 @@ export class UserController {
 
   @Get(':id')
   @ApiOperation({ summary: 'IDでユーザーを取得' })
+  @ApiParam({ name: 'id', description: 'ユーザーID' })
   @ApiResponse({ status: 200, type: UserDto })
   getById(@Param('id') id: number) {
     return this.userService.getById(Number(id));
