@@ -1,4 +1,7 @@
-import { initializeTransactionalContext } from 'typeorm-transactional';
+import {
+  initializeTransactionalContext,
+  StorageDriver,
+} from 'typeorm-transactional';
 import * as dotenvFlow from 'dotenv-flow';
 dotenvFlow.config();
 
@@ -14,7 +17,7 @@ import { ErrorResponseDto } from './common/swagger/error-response.dto';
 import { SuccessResponseDto } from './common/swagger';
 
 async function bootstrap() {
-  initializeTransactionalContext();
+  initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
   app.useGlobalPipes(
