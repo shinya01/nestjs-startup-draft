@@ -30,37 +30,35 @@ import { addTransactionalDataSource } from 'typeorm-transactional';
         database: config.get('database.name'),
         entities: [__dirname + '/common/entities/*.entity{.ts,.js}'],
         synchronize: config.get('database.synchronize'),
-        degug: true,
+        logging: config.get('app.env') !== 'production',
       }),
       dataSourceFactory: async (options) => {
         if (!options) throw new Error('Invalid options passed');
-
-        // 1. DataSourceのインスタンスを作成
         const dataSource = new DataSource(options);
-
-        // 2. 明示的に初期化を待機（これでESLintの警告が消えます）
         await dataSource.initialize();
-
-        // 3. トランザクション管理下に登録して返す
         return addTransactionalDataSource(dataSource);
       },
       inject: [ConfigService],
     }),
-    LoggerModule.forRoot({
-      pinoHttp: {
-        level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-        transport:
-          process.env.NODE_ENV !== 'production'
-            ? {
-                target: 'pino-pretty',
-                options: {
-                  colorize: true,
-                  translateTime: 'SYS:standard',
-                  ignore: 'pid,hostname',
-                },
-              }
-            : undefined,
-      },
+    LoggerModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (config: ConfigService) => ({
+        pinoHttp: {
+          level: config.get('app.env') === 'production' ? 'info' : 'debug',
+          transport:
+            config.get('app.env') !== 'production'
+              ? {
+                  target: 'pino-pretty',
+                  options: {
+                    colorize: true,
+                    translateTime: 'SYS:standard',
+                    ignore: 'pid,hostname',
+                  },
+                }
+              : undefined,
+        },
+      }),
+      inject: [ConfigService],
     }),
     UserModule,
     ArticleModule,
