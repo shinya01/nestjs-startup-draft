@@ -1,13 +1,13 @@
 # 05-構築手順 - プロトタイプ作成 - Swagger
 
-## 📘 Swagger とは？
+## 📘 Swagger の導入
 
 [Swagger](https://swagger.io/) は API ドキュメントを自動生成・可視化できるツール。  
-NestJS では `@nestjs/swagger` を使って簡単に導入できるよ！
+NestJS では `@nestjs/swagger` を使うことで、簡単に導入が可能。
 
 ---
 
-## 📦 必要なパッケージのインストール
+## 📦 必要パッケージのインストール
 
 ```bash
 npm install --save @nestjs/swagger
@@ -15,12 +15,12 @@ npm install --save @nestjs/swagger
 
 ---
 
-## ⚙️ `.env` に Swagger 用の環境変数を追加
+## ⚙️ `.env` への環境変数の追加
 
 ```dotenv
 PORT=3000
 
-# 追加
+# Swagger 用の設定
 SWAGGER_TITLE=My Awesome API
 SWAGGER_DESCRIPTION=This is the best API server.
 SWAGGER_VERSION=1.0.0
@@ -31,7 +31,7 @@ DB_NAME=myapp
 
 ---
 
-## 🧩 `configuration.ts` に Swagger 設定を追加
+## 🧩 `configuration.ts` への設定の追加
 
 ```ts
 // src/config/configuration.ts
@@ -57,7 +57,7 @@ export default () => ({
 
 ---
 
-## ✅ `validation.ts` に Swagger 用のバリデーションを追加
+## ✅ `validation.ts` へのバリデーションの追加
 
 ```ts
 // src/config/validation.ts
@@ -84,10 +84,10 @@ export const validationSchema = Joi.object({
 
 ---
 
-## 🚀 `main.ts` に Swagger を組み込む
+## 🚀 `main.ts` への Swagger 組み込み
 
 ```ts
-// main.ts
+// src/main.ts
 import * as dotenvFlow from 'dotenv-flow';
 dotenvFlow.config();
 
@@ -110,32 +110,24 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('swagger', app, document);
 
-  const port = configService.get<number>('PORT') || 3000;
+  if (configService.get('app.env') !== 'production') {
+    SwaggerModule.setup('swagger', app, document);
+  }
+
+  const port = configService.get<number>('app.port') || 3000;
   await app.listen(port);
 }
 void bootstrap();
 ```
 
-> 💡 Swagger UI は `http://localhost:3000/swagger` で確認できるよ！
+> 💡 Swagger UI は `http://localhost:3000/swagger` で確認可能。
 
 ---
 
-## 📌 補足
+## 📌 補足ポイント
 
-- `DocumentBuilder` を使って、API のタイトル・説明・バージョンを `.env` から動的に設定できる！
-- `SwaggerModule.setup()` の第1引数 `'swagger'` は、URL パス。変更可能！
-- 本番環境では Swagger を無効化したい場合、`NODE_ENV` を見て条件分岐するのもおすすめ！
+- `DocumentBuilder` により、API のタイトル・説明・バージョンを `.env` から動的に設定可能  
+- `SwaggerModule.setup()` の第1引数 `'swagger'` は URL パスとして任意に変更可能  
+- 本番環境では `NODE_ENV` を条件に Swagger を無効化する構成が推奨  
 
-```ts
-if (configService.get('NODE_ENV') !== 'production') {
-  SwaggerModule.setup('swagger', app, document);
-}
-```
-
----
-
-これで Swagger による API ドキュメントの自動生成ができるようになったよ！📄✨  
-開発中の確認や、チーム・フロントエンドとの連携にも超便利！  
-次は DTO に `@ApiProperty()` を付けて、よりリッチなドキュメントにしていこう〜！💧

@@ -108,6 +108,7 @@ NODE_ENV=production DB_HOST=override.example.com node main.js
 ### `main.ts`
 
 ```ts
+// src/main.ts
 // 方法①（推奨）：自動読み込み
 import 'dotenv-flow/config';
 
@@ -130,6 +131,7 @@ bootstrap();
 ### `app.module.ts`
 
 ```ts
+// src/app.module.ts
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import configuration from './config/configuration';
@@ -150,9 +152,10 @@ export class AppModule {}
 
 ---
 
-### `src/config/validation.ts`
+### `validation.ts`
 
 ```ts
+// src/config/validation.ts
 import * as Joi from 'joi';
 
 export const validationSchema = Joi.object({
@@ -172,9 +175,10 @@ export const validationSchema = Joi.object({
 
 ---
 
-### `src/config/configuration.ts`
+### `configuration.ts`
 
 ```ts
+// src/config/configuration.ts
 export default () => ({
   app: {
     env: process.env.NODE_ENV || 'development',

@@ -2,8 +2,8 @@
 
 ## 🔐 認証の概要
 
-この構成では、外部のIDプロバイダ（IdP）から発行されたJWTトークンを使って、NestJSアプリに認証機能を追加するよ。  
-トークンの署名検証には、JWKS（JSON Web Key Set）を使って公開鍵を自動取得する方式を採用！
+この構成では、外部のIDプロバイダ（IdP）から発行されたJWTトークンを使って、NestJSアプリに認証機能を追加。  
+トークンの署名検証には、JWKS（JSON Web Key Set）を使って公開鍵を自動取得する方式を採用。
 
 ---
 
@@ -52,14 +52,7 @@ npm install --save-dev @types/passport-jwt
 
 ---
 
-## ⚙️ `.env`,`.env.xxxxx` にJWT関連の設定を追加
-
-```dotenv
-JWKS_URI=https://your-idp/.well-known/jwks.json
-JWT_ISSUER=https://your-idp/
-JWT_AUDIENCE=your-client-id
-AUTH_DISABLE=false
-```
+## ⚙️ `.env` ファイルへのJWT設定の追加
 
 ```dotenv
 # .env
@@ -70,7 +63,7 @@ SWAGGER_DESCRIPTION=This is the best API server.
 SWAGGER_VERSION=1.0.0
 
 DB_PORT=5432
-DB_NAME=myapp
+DB_NAME=myap
 ```
 
 ```dotenv
@@ -109,10 +102,10 @@ DB_HOST=db
 DB_USER=devuser
 DB_PASS=devpass
 
-AUTH_DISABLE=true
-JWKS_URI=https://dev-7pubxl28.jp.auth0.com/.well-known/jwks.json
-JWT_ISSUER=https://dev-7pubxl28.jp.auth0.com/
-JWT_AUDIENCE=https://mynestjs.example.com
+AUTH_DISABLE=false
+JWKS_URI=https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_xxxx/.well-known/jwks.json
+JWT_ISSUER=https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_xxxx
+JWT_AUDIENCE=xxxxxxxxxxxxxxxxxx
 ```
 
 ---
@@ -152,6 +145,7 @@ export default () => ({
 ## ✅ `validation.ts` にバリデーションを追加
 
 ```ts
+// src/config/validation.ts
 import * as Joi from 'joi';
 
 export const validationSchema = Joi.object({
@@ -195,9 +189,10 @@ export class InvalidTokenException extends UnauthorizedException {
 
 ---
 
-## 🔑 JWTストラテジーの定義（`jwt.strategy.ts`）
+## 🔑 JWTストラテジーの定義
 
 ```ts
+// src/auth/strategies/jwt.strategy.ts
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy as JwtStrategyBase } from 'passport-jwt';
@@ -220,7 +215,9 @@ interface Claim {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(JwtStrategyBase) {
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+  ) {
     const disableAuth = configService.get<boolean>('app.authDisable');
     if (disableAuth) {
       // 認証無効モード：ダミー設定で初期化
@@ -232,7 +229,7 @@ export class JwtStrategy extends PassportStrategy(JwtStrategyBase) {
       return;
     }
     const jwksUri = configService.get<string>('jwt.jwksUri') || '';
-    const audience = configService.get<string>('jwt.audience') || '';
+    // const audience = configService.get<string>('jwt.audience') || ''; // Cognitoの場合、audienceチェックをしない
     const issuer = configService.get<string>('jwt.issuer') || '';
     const jwksSecret: SecretOrKeyProvider = jwksRsa.passportJwtSecret({
       cache: true,
@@ -245,27 +242,23 @@ export class JwtStrategy extends PassportStrategy(JwtStrategyBase) {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKeyProvider: jwksSecret,
-      audience,
+      // audience, // IDPの仕様に合わせる。Cognitoの場合、audienceチェックをしない。
       issuer,
       algorithms: ['RS256'],
+      passReqToCallback: true,
     });
   }
 
   validate(payload: Claim) {
-    // Ensure the token is an access token
     if (payload.token_use !== 'access') {
       throw new InvalidTokenException();
     }
-    // Basic validation of required claims
     if (!payload.sub || !payload.email) {
       throw new InvalidTokenException();
     }
-    // req.user will be set to the return value of this method
-    // You can customize the returned object as needed
     return {
       userId: payload.sub,
       email: payload.email,
-      roles: payload['cognito:groups'] || [],
     };
   }
 }
@@ -273,9 +266,10 @@ export class JwtStrategy extends PassportStrategy(JwtStrategyBase) {
 
 ---
 
-## 🛡️ 認証ガードの定義（`jwt-auth.guard.ts`）
+## 🛡️ 認証ガードの定義
 
 ```ts
+// src/auth/guards/jwt-auth.guard.ts
 import { Injectable, ExecutionContext } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Reflector } from '@nestjs/core';
@@ -299,6 +293,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   }
 }
 ```
+
+---
 
 ---
 
@@ -326,28 +322,68 @@ export function ApiAuthErrorResponses() {
 
 ---
 
-## 🧩 `auth.module.ts` に登録
+## 🧩 共通モジュールの index.ts 追加
+
+各共通ディレクトリに `index.ts` を配置することで、インポートの簡略化と保守性を向上。
+
+### `auth/guards/index.ts`
 
 ```ts
-import { Module } from '@nestjs/common';
-import { PassportModule } from '@nestjs/passport';
-import { JwtStrategy } from './strategies/jwt.strategy';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
+export * from './jwt-auth.guard';
+export * from './roles.guard'; // 任意
+```
 
-@Module({
-  imports: [PassportModule.register({ defaultStrategy: 'jwt' })],
-  providers: [JwtStrategy, JwtAuthGuard],
-  exports: [PassportModule, JwtAuthGuard],
-})
-export class AuthModule {}
+### `auth/decorators/index.ts`
+
+```ts
+export * from './roles.decorator'; // 任意
+```
+
+### `auth/exceptions/index.ts`
+
+```ts
+export * from './unauthorized.exception'; // 任意
+```
+
+### `auth/strategies/index.ts`
+
+```ts
+export * from './jwt.strategy';
+```
+
+### `auth/index.ts`
+
+```ts
+export * from './auth.module';
+export * from './guards';
+export * from './decorators';
+export * from './exceptions';
+export * from './strategies';
+```
+
+### `common/decorators/index.ts`
+
+```ts
+export * from './api-auth-error-responses.decorator';
+export * from './api-error-response.decorator'; // 既存
+export * from './api-success-response.decorator'; // 既存
 ```
 
 ---
 
-## 🧩 `app.module.ts` に組み込み
+これにより、以下のような簡潔なインポートが可能：
 
 ```ts
-// app.module.ts
+import { JwtAuthGuard } from 'src/auth';
+import { ApiAuthErrorResponses } from 'src/common/decorators';
+```
+
+---
+
+## 🧩 `app.module.ts` への組み込み
+
+```ts
+// src/app.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -377,24 +413,29 @@ import { AuthModule } from './auth/auth.module';
         database: config.get('database.name'),
         entities: [__dirname + '/common/entities/*.entity{.ts,.js}'],
         synchronize: config.get('database.synchronize'),
+        logging: config.get('app.env') !== 'production',
       }),
       inject: [ConfigService],
     }),
-    LoggerModule.forRoot({
-      pinoHttp: {
-        level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-        transport:
-          process.env.NODE_ENV !== 'production'
-            ? {
-                target: 'pino-pretty',
-                options: {
-                  colorize: true,
-                  translateTime: 'SYS:standard',
-                  ignore: 'pid,hostname',
-                },
-              }
-            : undefined,
-      },
+    LoggerModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (config: ConfigService) => ({
+        pinoHttp: {
+          level: config.get('app.env') === 'production' ? 'info' : 'debug',
+          transport:
+            config.get('app.env') !== 'production'
+              ? {
+                  target: 'pino-pretty',
+                  options: {
+                    colorize: true,
+                    translateTime: 'SYS:standard',
+                    ignore: 'pid,hostname',
+                  },
+                }
+              : undefined,
+        },
+      }),
+      inject: [ConfigService],
     }),
     UserModule,
     ArticleModule,
@@ -406,10 +447,18 @@ export class AppModule {}
 
 ---
 
-## 🎮 Controller に適用（UserController, ArticleController）
+## 🎮 Controller への適用例（User / Article）
 
 ```ts
-import { Controller, Get, Post, Param, Body, UseGuards } from '@nestjs/common';
+// src/user/user.controller.ts
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserDto } from './dto/user.dto';
@@ -466,11 +515,23 @@ export class UserController {
 ```
 
 ```ts
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+// src/article/article.controller.ts
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
 import { ArticleService } from './article.service';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { ArticleDto } from './dto/article.dto';
-import { ApiTags, ApiOperation, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBody,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import {
   ApiAuthErrorResponses,
   ApiErrorResponses,
@@ -510,84 +571,43 @@ export class ArticleController {
 
 ---
 
-## 🚀 `main.ts` でSwagger定義追加
+## 🚀 `main.ts` でのSwagger定義の追加
 
 ```ts
-// src/main.ts
-import * as dotenvFlow from 'dotenv-flow';
-dotenvFlow.config();
-
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { Logger } from 'nestjs-pino';
-import { ConfigService } from '@nestjs/config';
+// src/main.ts（抜粋）
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ValidationPipe } from '@nestjs/common';
-import { initializeTransactionalContext } from 'typeorm-transactional-cls-hooked';
-import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { ResponseTransformInterceptor } from './common/interceptors/response-transform.interceptor';
-import { ErrorResponseDto } from './common/swagger/error-response.dto';
-import { SuccessResponseDto } from './common/swagger';
 
-async function bootstrap() {
-  initializeTransactionalContext(); // トランザクションのコンテキスト初期化
+const swaggerConfig = new DocumentBuilder()
+  .setTitle(configService.get<string>('swagger.title') || 'My API')
+  .setDescription(
+    configService.get<string>('swagger.description') || 'API documentation',
+  )
+  .setVersion(configService.get<string>('swagger.version') || '1.0')
+  .addBearerAuth(
+    {
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'JWT',
+      description: 'Enter your Auth0 access token here',
+    },
+    'access-token',
+  )
+  .build();
 
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
-  app.useLogger(app.get(Logger));
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true, // DTOに定義されていないプロパティを除外
-      transform: true, // 型変換を有効化
-    }),
-  );
-  app.useGlobalFilters(new HttpExceptionFilter()); // HTTP例外フィルター
-  app.useGlobalInterceptors(new ResponseTransformInterceptor()); // レスポンス変換グローバルインターセプター
-
-  const configService = app.get(ConfigService);
-
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle(configService.get<string>('swagger.title') || 'My API')
-    .setDescription(
-      configService.get<string>('swagger.description') || 'API documentation',
-    )
-    .setVersion(configService.get<string>('swagger.version') || '1.0')
-    .addBearerAuth(
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        description: 'Enter your Auth0 access token here',
-      },
-      'access-token',
-    )
-    .build();
-
-  const document = SwaggerModule.createDocument(app, swaggerConfig, {
-    extraModels: [SuccessResponseDto, ErrorResponseDto], // 追加のモデルを登録
-  });
-  SwaggerModule.setup('swagger', app, document);
-
-  const port = configService.get<number>('PORT') || 3000;
-  await app.listen(port);
-}
-void bootstrap();
+const document = SwaggerModule.createDocument(app, swaggerConfig, {
+  extraModels: [SuccessResponseDto, ErrorResponseDto],
+});
+SwaggerModule.setup('swagger', app, document);
 ```
 
 ---
 
+## ✅ 補足ポイント
 
+- `JwtStrategy` によって、**外部IdPのJWTを安全に検証**
+- `JwtAuthGuard` によって、**認証の有効・無効を環境変数で制御**
+- `@ApiAuthErrorResponses()` によって、**Swagger UI に401/403のレスポンスを明示**
+- `@UseGuards(JwtAuthGuard)` によって、**Controller単位で認証を適用**
+- `@ApiBearerAuth()` によって、**Swagger上でトークン入力欄を表示**
+- `AuthModule` によって、**認証機能をモジュール単位で分離・管理**
 
-## ✅ まとめ
-
-この構成で…
-
-- ✅ 外部IdPのJWTを安全に検証し、ユーザー情報を取得できる！
-- ✅ 認証スキップやロール制御の拡張も簡単！
-- ✅ SwaggerでのAPI仕様も明確に！
-- ✅ 共通エラーデコレーターでドキュメントの保守性も向上！
-
----
-
-これでマークダウン形式の全文が完成だよ！  
-`.md` ファイルに貼り付ければ、**そのままドキュメントとして使える**はず！  
-他にも共通レスポンスやページネーションのデコレーターを整えたいときは、いつでも声かけてね🦊📘

@@ -6,8 +6,6 @@ import { ConfigService } from '@nestjs/config';
 import type { SecretOrKeyProvider } from 'passport-jwt';
 import { InvalidTokenException } from '../../common/exceptions';
 import { UserService } from 'src/user/user.service';
-import { HttpService } from '@nestjs/axios';
-// import { lastValueFrom } from 'rxjs';
 import {
   CognitoIdentityProviderClient,
   GetUserCommand,
@@ -31,7 +29,6 @@ export class JwtStrategy extends PassportStrategy(JwtStrategyBase) {
   constructor(
     private readonly configService: ConfigService,
     private readonly userService: UserService,
-    private readonly httpService: HttpService,
   ) {
     const disableAuth = configService.get<boolean>('app.authDisable');
     if (disableAuth) {

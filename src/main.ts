@@ -41,7 +41,7 @@ async function bootstrap() {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
-        description: 'Enter your Auth0 access token here',
+        description: 'Enter your access token here',
       },
       'access-token',
     )
@@ -50,9 +50,12 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig, {
     extraModels: [SuccessResponseDto, ErrorResponseDto], // 追加のモデルを登録
   });
-  SwaggerModule.setup('swagger', app, document);
 
-  const port = configService.get<number>('PORT') || 3000;
+  if (configService.get('app.env') !== 'production') {
+    SwaggerModule.setup('swagger', app, document);
+  }
+
+  const port = configService.get<number>('app.port') || 3000;
   await app.listen(port);
 }
 void bootstrap();
