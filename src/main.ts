@@ -2,8 +2,7 @@ import {
   initializeTransactionalContext,
   StorageDriver,
 } from 'typeorm-transactional';
-import * as dotenvFlow from 'dotenv-flow';
-dotenvFlow.config();
+import 'dotenv-flow/config';
 
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
