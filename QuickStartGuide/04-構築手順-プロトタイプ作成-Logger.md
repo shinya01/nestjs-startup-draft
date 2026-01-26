@@ -20,6 +20,8 @@ npm install --save nestjs-pino
 
 ## ⚙️ AppModule への LoggerModule の追加
 
+AppModuleにLoggerModuleを追加する。
+
 ```ts
 // src/app.module.ts
 import { Module } from '@nestjs/common';
@@ -33,7 +35,7 @@ import { LoggerModule } from 'nestjs-pino';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      ignoreEnvFile: true,
+      ignoreEnvFile: true, // dotenv-flow による読み込みのため NestJS 側では無効化
       load: [configuration],
       validationSchema,
     }),
@@ -47,11 +49,12 @@ import { LoggerModule } from 'nestjs-pino';
         password: config.get('database.pass'),
         database: config.get('database.name'),
         entities: [__dirname + '/common/entities/*.entity{.ts,.js}'],
-        synchronize: config.get('database.synchronize'),
-        logging: config.get('app.env') !== 'production',
+        logging: config.get('app.env') !== 'production', // 本番環境ではログを無効化
+        synchronize: false, // 自動同期を無効化
       }),
       inject: [ConfigService],
     }),
+    // Logger の設定を非同期で読み込む
     LoggerModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
@@ -86,23 +89,20 @@ export class AppModule {}
 
 ```ts
 // src/main.ts
-import * as dotenvFlow from 'dotenv-flow';
-dotenvFlow.config();
-
+import 'dotenv-flow/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { Logger } from 'nestjs-pino';
 import { ConfigService } from '@nestjs/config';
+import { Logger } from 'nestjs-pino';
 
 async function bootstrap() {
+  // nestjs-pino のロガーを使用するため bufferLogs: true を指定
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
-
-  // nestjs-pino のロガーを使用
+  // nestjs-pino のロガーをアプリケーションのロガーとして設定
   app.useLogger(app.get(Logger));
 
-  const config = app.get(ConfigService);
-  const port = config.get<number>('PORT') || 3000;
-
+  const configService = app.get(ConfigService);
+  const port = configService.get<number>('app.port') || 3000;
   await app.listen(port);
 }
 void bootstrap();
@@ -135,3 +135,10 @@ export class SampleService {
 - DI（依存性注入）に対応し、サービスやコントローラー内でも簡単にログ出力が可能  
 - 開発環境では整形されたログ、本番環境では JSON ログを出力する構成が実現可能  
 
+---
+
+## 📝 参照
+
+- <https://docs.nestjs.com/techniques/logger>
+- <https://github.com/pinojs/pino>
+- <https://github.com/pinojs/pino-pretty>

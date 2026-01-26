@@ -105,29 +105,6 @@ NODE_ENV=production DB_HOST=override.example.com node main.js
 
 ## 🧪 実装
 
-### `main.ts`
-
-```ts
-// src/main.ts
-// 方法①（推奨）：自動読み込み
-import 'dotenv-flow/config';
-
-// 方法②：明示的な読み込み
-// import * as dotenvFlow from 'dotenv-flow';
-// dotenvFlow.config();
-
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  await app.listen(3000);
-}
-void bootstrap();
-```
-
----
-
 ### `validation.ts`
 
 ```ts
@@ -192,6 +169,33 @@ import { validationSchema } from './config/validation';
   ],
 })
 export class AppModule {}
+```
+
+---
+
+### `main.ts`
+
+```ts
+// src/main.ts
+// 方法①（推奨）：自動読み込み
+import 'dotenv-flow/config';
+
+// 方法②：明示的な読み込み
+// import * as dotenvFlow from 'dotenv-flow';
+// dotenvFlow.config();
+
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { ConfigService } from '@nestjs/config';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  const configService = app.get(ConfigService);
+  const port = configService.get<number>('app.port') || 3000;
+  await app.listen(port);
+}
+void bootstrap();
 ```
 
 ---
