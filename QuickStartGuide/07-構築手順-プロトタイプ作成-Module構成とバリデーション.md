@@ -13,17 +13,21 @@ NestJS のモジュール構成と DTO バリデーションを導入し、
 src/
 ├── user/
 │   ├── dto/
-│   │   ├── create-user.dto.ts
-│   │   ├── user-id-param.dto.ts
-│   │   ├── user.dto.ts
+│   │   ├── request/
+│   │   │   ├── create-user.dto.ts
+│   │   │   └── user-id-param.dto.ts
+│   │   ├── response/
+│   │   │   └── user.dto.ts
 │   │   └── index.ts
 │   ├── user.controller.ts
 │   ├── user.service.ts
 │   └── user.module.ts
 ├── article/
 │   ├── dto/
-│   │   ├── create-article.dto.ts
-│   │   ├── article.dto.ts
+│   │   ├── request/
+│   │   │   └── create-article.dto.ts
+│   │   ├── response/
+│   │   │   └── article.dto.ts
 │   │   └── index.ts
 │   ├── article.controller.ts
 │   ├── article.service.ts
@@ -224,7 +228,7 @@ NestJSでは、`ValidationPipe` と組み合わせることで、**自動的に�
 #### `user.dto.ts`
 
 ```ts
-// src/user/dto/user.dto.ts
+// src/user/dto/response/user.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 
@@ -257,10 +261,19 @@ export class UserDto {
 
 ---
 
+### `user/dto/response/index.ts`
+
+```ts
+// src/user/dto/response/index.ts
+export * from './user.dto';
+```
+
+---
+
 #### `create-user.dto.ts`
 
 ```ts
-// src/user/dto/create-user.dto.ts
+// src/user/dto/request/create-user.dto.ts
 import { IsEmail, IsNotEmpty, Length } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -278,12 +291,21 @@ export class CreateUserDto {
 
 ---
 
+### `user/dto/request/index.ts`
+
+```ts
+// src/user/dto/request/index.ts
+export * from './create-user.dto';
+```
+
+---
+
 ### `user/dto/index.ts`
 
 ```ts
 // src/user/dto/index.ts
-export * from './create-user.dto';
-export * from './user.dto';
+export * from './request';
+export * from './response';
 ```
 
 ### 🛠️ UserService の実装（User + UserInfo 統合）
@@ -409,10 +431,10 @@ export class UserModule {}
 #### `article.dto.ts`
 
 ```ts
-// src/article/dto/article.dto.ts
+// src/article/dto/response/article.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
-import { UserDto } from '../../user/dto';
+import { UserDto } from '../../../user/dto';
 
 export class ArticleDto {
   @ApiProperty()
@@ -436,10 +458,19 @@ export class ArticleDto {
 
 ---
 
+### `article/dto/response/index.ts`
+
+```ts
+// src/article/dto/response/index.ts
+export * from './article.dto';
+```
+
+---
+
 #### `create-article.dto.ts`
 
 ```ts
-// src/article/dto/create-article.dto.ts
+// src/article/dto/request/create-article.dto.ts
 import { IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -457,12 +488,23 @@ export class CreateArticleDto {
 }
 ```
 
+---
+
+### `article/dto/request/index.ts`
+
+```ts
+// src/article/dto/request/index.ts
+export * from './create-article.dto';
+```
+
+---
+
 #### `article/dto/index.ts`
 
 ```ts
 // src/article/dto/index.ts
-export * from './create-article.dto';
-export * from './article.dto';
+export * from './request';
+export * from './response';
 ```
 
 ---
