@@ -9,14 +9,9 @@ Service 層との責務分離やテストのしやすさが向上。
 
 ## 📁 ディレクトリ構成
 
-```
+```txt
 src/
 ├── common/
-│   ├── entities/
-│   │   ├── article.entity.ts
-│   │   ├── user.entity.ts
-│   │   ├── user-info.entity.ts
-│   │   └── index.ts
 │   ├── repositories/
 │   │   ├── article.repository.ts
 │   │   ├── user.repository.ts
@@ -227,3 +222,6 @@ export class UserService {
 - テスト時にモックを差し替えやすくなり、ユニットテストの記述が容易  
 - 複数の Entity に対応する場合は、`REPOSITORIES` に追加するだけで拡張が可能  
 
+## 📝 参照
+
+- <https://docs.nestjs.com/techniques/database#repository-pattern>

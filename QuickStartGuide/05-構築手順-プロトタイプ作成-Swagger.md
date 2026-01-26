@@ -127,3 +127,7 @@ void bootstrap();
 - `DocumentBuilder` により、API のタイトル・説明・バージョンを `.env` から動的に設定可能  
 - `SwaggerModule.setup()` の第1引数 `'swagger'` は URL パスとして任意に変更可能  
 - 本番環境では `NODE_ENV` を条件に Swagger を無効化する構成が推奨  
+
+## 📝 参照
+
+- <https://docs.nestjs.com/openapi/introduction>
