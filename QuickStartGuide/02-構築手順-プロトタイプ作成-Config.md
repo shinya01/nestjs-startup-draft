@@ -253,20 +253,20 @@ DB_PASS=devpass
 `NODE_ENV=devcontainer` を指定したスクリプトの追加：
 
 ```json
-"scripts": {
-  "build": "nest build",
-  "format": "prettier --write "src/**/*.ts" "test/**/*.ts"",
-  "start": "NODE_ENV=devcontainer nest start",
-  "start:dev": "NODE_ENV=devcontainer nest start --watch",
-  "start:debug": "NODE_ENV=devcontainer nest start --debug --watch",
-  "start:prod": "NODE_ENV=devcontainer node dist/main",
-  "lint": "eslint "{src,apps,libs,test}/**/*.ts" --fix",
-  "test": "jest",
-  "test:watch": "jest --watch",
-  "test:cov": "jest --coverage",
-  "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-  "test:e2e": "jest --config ./test/jest-e2e.json"
-}
+  "scripts": {
+    "build": "nest build",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "start": "NODE_ENV=devcontainer nest start",
+    "start:dev": "NODE_ENV=devcontainer nest start --watch",
+    "start:debug": "NODE_ENV=devcontainer nest start --debug --watch",
+    "start:prod": "NODE_ENV=devcontainer node dist/main",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "jest --config ./test/jest-e2e.json"
+  },
 ```
 
 ## 📝 参照
