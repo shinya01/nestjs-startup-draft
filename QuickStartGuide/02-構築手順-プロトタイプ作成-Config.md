@@ -58,16 +58,16 @@ npm install --save-dev @types/dotenv-flow
 1. `.gitignore` を開く  
 2. 以下の記述を確認：
 
-```
-.env
-```
+    ```txt
+    .env
+    ```
 
 3. 削除またはコメントアウト：
 
-```diff
-- .env
-+ # .env
-```
+    ```diff
+    - .env
+    + # .env
+    ```
 
 > ⚠️ **注意**：`.env.production` や `.env.local` など、機密性の高いファイルは引き続き Git 管理から除外するのが一般的。  
 > チームで共有する場合は、`.env.example` を作成し、必要なキーのみを記載したテンプレートの用意がおすすめ。
