@@ -243,10 +243,15 @@ export class UserDto {
   @Expose()
   email: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    type: () => UserInfoDto,
+    nullable: true,
+    required: false,
+    description: 'ユーザーの追加情報。存在しない場合はnull。',
+  })
   @Expose()
   @Type(() => UserInfoDto)
-  info: UserInfoDto;
+  info?: UserInfoDto | null;
 }
 ```
 
