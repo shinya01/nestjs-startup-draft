@@ -17,16 +17,16 @@ npm install --save @nestjs/swagger
 
 ## ⚙️ `.env` への環境変数の追加
 
-```dotenv
-PORT=3000
+環境変数`SWAGGER_XXXX`を追加する
 
-# Swagger 用の設定
+```sh
+## Environment Variables .env
+PORT=3000
+DB_PORT=5432
+DB_NAME=myapp
 SWAGGER_TITLE=My Awesome API
 SWAGGER_DESCRIPTION=This is the best API server.
 SWAGGER_VERSION=1.0.0
-
-DB_PORT=5432
-DB_NAME=myapp
 ```
 
 ---
@@ -36,14 +36,14 @@ DB_NAME=myapp
 ```ts
 // src/config/configuration.ts
 export default () => ({
+  app: {
+    env: process.env.NODE_ENV || 'development',
+    port: parseInt(process.env.PORT || '3000', 10),
+  },
   swagger: {
     title: process.env.SWAGGER_TITLE,
     description: process.env.SWAGGER_DESCRIPTION,
     version: process.env.SWAGGER_VERSION,
-  },
-  app: {
-    env: process.env.NODE_ENV || 'development',
-    port: parseInt(process.env.PORT || '3000', 10),
   },
   database: {
     host: process.env.DB_HOST,
@@ -88,13 +88,11 @@ export const validationSchema = Joi.object({
 
 ```ts
 // src/main.ts
-import * as dotenvFlow from 'dotenv-flow';
-dotenvFlow.config();
-
+import 'dotenv-flow/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { Logger } from 'nestjs-pino';
 import { ConfigService } from '@nestjs/config';
+import { Logger } from 'nestjs-pino';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
@@ -103,14 +101,13 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
 
+  // Swagger の設定
   const swaggerConfig = new DocumentBuilder()
     .setTitle(configService.get<string>('swagger.title') || '')
     .setDescription(configService.get<string>('swagger.description') || '')
     .setVersion(configService.get<string>('swagger.version') || '')
     .build();
-
   const document = SwaggerModule.createDocument(app, swaggerConfig);
-
   if (configService.get('app.env') !== 'production') {
     SwaggerModule.setup('swagger', app, document);
   }
@@ -130,4 +127,3 @@ void bootstrap();
 - `DocumentBuilder` により、API のタイトル・説明・バージョンを `.env` から動的に設定可能  
 - `SwaggerModule.setup()` の第1引数 `'swagger'` は URL パスとして任意に変更可能  
 - 本番環境では `NODE_ENV` を条件に Swagger を無効化する構成が推奨  
-
