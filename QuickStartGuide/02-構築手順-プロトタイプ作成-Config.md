@@ -217,8 +217,6 @@ DB_NAME=myapp
 
 ```sh
 ## Environment Variables .env.development
-NODE_ENV=development
-
 DB_HOST=dev.db.example.com
 DB_USER=devuser
 DB_PASS=devspass
@@ -230,8 +228,6 @@ DB_PASS=devspass
 
 ```sh
 ## Environment Variables .env.production
-NODE_ENV=production
-
 DB_HOST=prod.db.example.com
 DB_USER=produser
 DB_PASS=superpass
@@ -243,8 +239,6 @@ DB_PASS=superpass
 
 ```sh
 ## Environment Variables .env.devcontainer
-NODE_ENV=devcontainer
-
 DB_HOST=db
 DB_USER=devuser
 DB_PASS=devpass
