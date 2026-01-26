@@ -16,9 +16,9 @@ npm install --save-dev @types/joi
 
 NestJS の初期サンプルファイルの削除：
 
-- `app.controller.ts`
-- `app.controller.spec.ts`
-- `app.service.ts`
+- `src/app.controller.ts`
+- `src/app.controller.spec.ts`
+- `src/app.service.ts`
 
 ---
 
@@ -123,31 +123,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   await app.listen(3000);
 }
-bootstrap();
-```
-
----
-
-### `app.module.ts`
-
-```ts
-// src/app.module.ts
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import configuration from './config/configuration';
-import { validationSchema } from './config/validation';
-
-@Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      ignoreEnvFile: true, // dotenv-flow による読み込みのため NestJS 側では無効化
-      load: [configuration],
-      validationSchema,
-    }),
-  ],
-})
-export class AppModule {}
+void bootstrap();
 ```
 
 ---
@@ -196,11 +172,36 @@ export default () => ({
 
 ---
 
+### `app.module.ts`
+
+```ts
+// src/app.module.ts
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import configuration from './config/configuration';
+import { validationSchema } from './config/validation';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      ignoreEnvFile: true, // dotenv-flow による読み込みのため NestJS 側では無効化
+      load: [configuration],
+      validationSchema,
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+---
+
 ## 🧾 `.env` ファイルの例
 
 ### `.env`
 
-```
+```sh
+## Environment Variables .env
 PORT=3000
 DB_PORT=5432
 DB_NAME=myapp
@@ -210,7 +211,8 @@ DB_NAME=myapp
 
 ### `.env.development`
 
-```
+```sh
+## Environment Variables .env.development
 NODE_ENV=development
 
 DB_HOST=dev.db.example.com
@@ -222,7 +224,8 @@ DB_PASS=devspass
 
 ### `.env.production`
 
-```
+```sh
+## Environment Variables .env.production
 NODE_ENV=production
 
 DB_HOST=prod.db.example.com
@@ -234,7 +237,8 @@ DB_PASS=superpass
 
 ### `.env.devcontainer`
 
-```
+```sh
+## Environment Variables .env.devcontainer
 NODE_ENV=devcontainer
 
 DB_HOST=db
@@ -264,3 +268,7 @@ DB_PASS=devpass
   "test:e2e": "jest --config ./test/jest-e2e.json"
 }
 ```
+
+## 📝 参照
+
+- <https://docs.nestjs.com/techniques/configuration>
