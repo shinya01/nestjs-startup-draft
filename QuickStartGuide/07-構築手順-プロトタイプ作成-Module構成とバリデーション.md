@@ -747,6 +747,7 @@ void bootstrap();
 - 各ディレクトリに `index.ts` を配置することで、インポートの簡略化と保守性を向上  
 - Service クラスでは `Logger` を使って生成時にログを出力し、デバッグ性を向上  
 - `typeorm-transactional` による `@Transactional()` デコレーターの導入により、Service 層でのトランザクション制御を簡潔に実装  
+- `@Transactional()` によって、Service 層での整合性のある更新処理を実現
 - `initializeTransactionalContext()` と `addTransactionalDataSource()` によって、非同期処理間でもトランザクションスコープを維持可能  
 - 明示的な `queryRunner` の管理が不要となり、トランザクション処理の記述を簡素化  
 
@@ -757,3 +758,8 @@ void bootstrap();
 - <https://github.com/Aliheym/typeorm-transactional>
 - <https://docs.nestjs.com/techniques/validation>
 - <https://docs.nestjs.com/techniques/serialization>
+- <https://docs.nestjs.com/controllers>
+- <https://docs.nestjs.com/providers>
+- <https://docs.nestjs.com/modules>
+- <https://docs.nestjs.com/pipes>
+  
