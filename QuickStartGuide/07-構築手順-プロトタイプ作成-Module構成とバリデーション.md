@@ -230,6 +230,12 @@ NestJSでは、`ValidationPipe` と組み合わせることで、**自動的に�
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 
+export class UserInfoDto {
+  @ApiProperty()
+  @Expose()
+  name: string;
+}
+
 export class UserDto {
   @ApiProperty()
   @Expose()
@@ -243,12 +249,6 @@ export class UserDto {
   @Expose()
   @Type(() => UserInfoDto)
   info: UserInfoDto;
-}
-
-export class UserInfoDto {
-  @ApiProperty()
-  @Expose()
-  name: string;
 }
 ```
 
