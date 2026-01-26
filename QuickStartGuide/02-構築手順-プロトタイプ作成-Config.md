@@ -85,7 +85,7 @@ npm install --save-dev @types/dotenv-flow
 
 > `dotenv-flow` は **後から読み込まれたファイルが優先される** ため、最終的な優先順位は以下の通り：
 
-```
+```txt
 .env.development.local > .env.local > .env.development > .env
 ```
 
