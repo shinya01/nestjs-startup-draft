@@ -222,6 +222,8 @@ export class UserService {
 - テスト時にモックを差し替えやすくなり、ユニットテストの記述が容易  
 - 複数の Entity に対応する場合は、`REPOSITORIES` に追加するだけで拡張が可能  
 
+---
+
 ## 📝 参照
 
 - <https://docs.nestjs.com/techniques/database#repository-pattern>

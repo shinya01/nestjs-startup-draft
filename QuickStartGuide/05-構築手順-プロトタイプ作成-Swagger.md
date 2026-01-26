@@ -128,6 +128,8 @@ void bootstrap();
 - `SwaggerModule.setup()` の第1引数 `'swagger'` は URL パスとして任意に変更可能  
 - 本番環境では `NODE_ENV` を条件に Swagger を無効化する構成が推奨  
 
+---
+
 ## 📝 参照
 
 - <https://docs.nestjs.com/openapi/introduction>
