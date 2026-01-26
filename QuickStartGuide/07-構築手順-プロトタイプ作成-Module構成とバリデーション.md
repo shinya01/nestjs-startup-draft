@@ -19,8 +19,7 @@ src/
 │   │   └── index.ts
 │   ├── user.controller.ts
 │   ├── user.service.ts
-│   ├── user.module.ts
-│   └── index.ts
+│   └── user.module.ts
 ├── article/
 │   ├── dto/
 │   │   ├── create-article.dto.ts
@@ -28,8 +27,7 @@ src/
 │   │   └── index.ts
 │   ├── article.controller.ts
 │   ├── article.service.ts
-│   ├── article.module.ts
-│   └── index.ts
+│   └── article.module.ts
 ```
 
 ## 📦 トランザクション管理の導入
