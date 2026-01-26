@@ -272,3 +272,4 @@ DB_PASS=devpass
 ## 📝 参照
 
 - <https://docs.nestjs.com/techniques/configuration>
+- <https://github.com/kerimdzhanov/dotenv-flow>
