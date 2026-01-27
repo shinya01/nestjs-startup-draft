@@ -16,8 +16,7 @@ src/
 │   │   ├── request/
 │   │   │   ├── create-user.dto.ts
 │   │   │   └── user-id-param.dto.ts
-│   │   ├── response/
-│   │   │   └── user.dto.ts
+│   │   ├── user.dto.ts
 │   │   └── index.ts
 │   ├── user.controller.ts
 │   ├── user.service.ts
@@ -26,8 +25,7 @@ src/
 │   ├── dto/
 │   │   ├── request/
 │   │   │   └── create-article.dto.ts
-│   │   ├── response/
-│   │   │   └── article.dto.ts
+│   │   ├── article.dto.ts
 │   │   └── index.ts
 │   ├── article.controller.ts
 │   ├── article.service.ts
@@ -261,15 +259,6 @@ export class UserDto {
 
 ---
 
-### `user/dto/response/index.ts`
-
-```ts
-// src/user/dto/response/index.ts
-export * from './user.dto';
-```
-
----
-
 #### `create-user.dto.ts`
 
 ```ts
@@ -305,7 +294,7 @@ export * from './create-user.dto';
 ```ts
 // src/user/dto/index.ts
 export * from './request';
-export * from './response';
+export * from './user.dto';
 ```
 
 ### 🛠️ UserService の実装（User + UserInfo 統合）
@@ -434,7 +423,7 @@ export class UserModule {}
 // src/article/dto/response/article.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
-import { UserDto } from '../../../user/dto';
+import { UserDto } from '../../user/dto';
 
 export class ArticleDto {
   @ApiProperty()
@@ -454,15 +443,6 @@ export class ArticleDto {
   @Type(() => UserDto)
   author: UserDto;
 }
-```
-
----
-
-### `article/dto/response/index.ts`
-
-```ts
-// src/article/dto/response/index.ts
-export * from './article.dto';
 ```
 
 ---
@@ -504,7 +484,7 @@ export * from './create-article.dto';
 ```ts
 // src/article/dto/index.ts
 export * from './request';
-export * from './response';
+export * from './article.dto';
 ```
 
 ---
