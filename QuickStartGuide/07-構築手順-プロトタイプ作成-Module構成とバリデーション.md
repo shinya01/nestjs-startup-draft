@@ -762,4 +762,5 @@ void bootstrap();
 - <https://docs.nestjs.com/providers>
 - <https://docs.nestjs.com/modules>
 - <https://docs.nestjs.com/pipes>
-  
+- <https://docs.nestjs.com/fundamentals/dynamic-modules>
+- <https://docs.nestjs.com/fundamentals/injection-scopes>  
