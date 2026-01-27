@@ -2,8 +2,7 @@
 
 ## 📘 Swagger の導入
 
-[Swagger](https://swagger.io/) は API ドキュメントを自動生成・可視化できるツール。  
-NestJS では `@nestjs/swagger` を使うことで、簡単に導入が可能。
+[Swagger (OpenAPI)](https://swagger.io/) は、API の仕様を視覚的に確認し、ブラウザから直接リクエストを試行できるツールです。NestJS では、コードからドキュメントを自動生成する強力な機能が提供されています。
 
 ---
 
@@ -15,76 +14,70 @@ npm install --save @nestjs/swagger
 
 ---
 
-## ⚙️ `.env` への環境変数の追加
+## ⚙️ 環境変数の設定 (Config)
 
-環境変数`SWAGGER_XXXX`を追加する
+Swagger の表示内容を環境に応じて管理できるよう、`.env` および設定クラスを更新します。
 
-```sh
-## Environment Variables .env
-PORT=3000
-DB_PORT=5432
-DB_NAME=myapp
-SWAGGER_TITLE=My Awesome API
-SWAGGER_DESCRIPTION=This is the best API server.
-SWAGGER_VERSION=1.0.0
+### 1. `.env` への追加
+
+```bash
+## Swagger Settings
+SWAGGER_TITLE="Sample Project API"
+SWAGGER_DESCRIPTION="The API description for my NestJS project"
+SWAGGER_VERSION="1.0.0"
 ```
 
----
+### 2. `validation.ts` へのバリデーション追加
 
-## 🧩 `configuration.ts` への設定の追加
+```ts
+// src/config/validation.ts
+export const validationSchema = Joi.object({
+  // ...既存の設定
+  SWAGGER_TITLE: Joi.string().required(),
+  SWAGGER_DESCRIPTION: Joi.string().required(),
+  SWAGGER_VERSION: Joi.string().required(),
+});
+```
+
+### 3. `configuration.ts` への構造化設定
 
 ```ts
 // src/config/configuration.ts
 export default () => ({
-  app: {
-    env: process.env.NODE_ENV || 'development',
-    port: parseInt(process.env.PORT || '3000', 10),
-  },
+  // ...既存の設定
   swagger: {
     title: process.env.SWAGGER_TITLE,
     description: process.env.SWAGGER_DESCRIPTION,
     version: process.env.SWAGGER_VERSION,
   },
-  database: {
-    host: process.env.DB_HOST,
-    port: parseInt(process.env.DB_PORT || '5432', 10),
-    user: process.env.DB_USER,
-    pass: process.env.DB_PASS,
-    name: process.env.DB_NAME,
-  },
 });
 ```
 
 ---
 
-## ✅ `validation.ts` へのバリデーションの追加
+## 🚀 Swagger の自動生成設定 (CLI Plugin)
 
-```ts
-// src/config/validation.ts
-import * as Joi from 'joi';
+この設定を追加することで、DTO クラスのプロパティにデコレータを記述しなくても、Swagger 上で自動的に型が認識されるようになります。
 
-export const validationSchema = Joi.object({
-  NODE_ENV: Joi.string()
-    .valid('development', 'production', 'test', 'devcontainer')
-    .default('development'),
+`nest-cli.json` を以下のように修正します：
 
-  PORT: Joi.number().default(3000),
-
-  SWAGGER_TITLE: Joi.string().required(),
-  SWAGGER_DESCRIPTION: Joi.string().required(),
-  SWAGGER_VERSION: Joi.string().required(),
-
-  DB_HOST: Joi.string().required(),
-  DB_PORT: Joi.number().default(5432),
-  DB_USER: Joi.string().required(),
-  DB_PASS: Joi.string().required(),
-  DB_NAME: Joi.string().required(),
-});
+```json
+{
+  "$schema": "[https://json.schemastore.org/nest-cli](https://json.schemastore.org/nest-cli)",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "src",
+  "compilerOptions": {
+    "deleteOutDir": true,
+    "plugins": ["@nestjs/swagger"]
+  }
+}
 ```
 
 ---
 
-## 🚀 `main.ts` への Swagger 組み込み
+## 🛠️ main.ts への組み込み
+
+アプリケーションの起動時に Swagger UI をセットアップします。
 
 ```ts
 // src/main.ts
@@ -101,35 +94,46 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
 
-  // Swagger の設定
+  // Swagger 設定の構築
   const swaggerConfig = new DocumentBuilder()
-    .setTitle(configService.get<string>('swagger.title') || '')
-    .setDescription(configService.get<string>('swagger.description') || '')
-    .setVersion(configService.get<string>('swagger.version') || '')
+    .setTitle(configService.get<string>('swagger.title', 'API'))
+    .setDescription(configService.get<string>('swagger.description', ''))
+    .setVersion(configService.get<string>('swagger.version', '1.0'))
+    .addBearerAuth() // 将来的なJWT認証用（必要に応じて）
     .build();
+
   const document = SwaggerModule.createDocument(app, swaggerConfig);
+
+  // 本番環境以外（devcontainer等）でのみ Swagger UI を公開
   if (configService.get('app.env') !== 'production') {
     SwaggerModule.setup('swagger', app, document);
   }
 
-  const port = configService.get<number>('app.port') || 3000;
+  const port = configService.get<number>('app.port', 3000);
   await app.listen(port);
 }
 void bootstrap();
 ```
 
-> 💡 Swagger UI は `http://localhost:3000/swagger` で確認可能。
+---
+
+## ✅ 動作確認
+
+1. アプリケーションを起動： `npm run start:dev`
+2. ブラウザでアクセス： `http://localhost:3000/swagger`
+3. 定義したエンティティやコントローラー（今後作成するもの）がリストアップされていれば成功です。
 
 ---
 
 ## 📌 補足ポイント
 
-- `DocumentBuilder` により、API のタイトル・説明・バージョンを `.env` から動的に設定可能  
-- `SwaggerModule.setup()` の第1引数 `'swagger'` は URL パスとして任意に変更可能  
-- 本番環境では `NODE_ENV` を条件に Swagger を無効化する構成が推奨  
+- **セキュリティ**: 本番環境で Swagger を公開すると API の内部構造が漏洩するリスクがあるため、`NODE_ENV` による条件分岐は必須です。
+- **CLI Plugin**: `nest-cli.json` の設定により、コードを汚さずにドキュメントを充実させることが可能になります。
+- **複数ドキュメント**: 大規模なプロジェクトでは、`SwaggerModule.createDocument` を複数回呼び出すことで、ドメインごとにドキュメントを分割することも可能です。
 
 ---
 
 ## 📝 参照
 
-- <https://docs.nestjs.com/openapi/introduction>
+- [NestJS OpenAPI (Swagger) Documentation](https://docs.nestjs.com/openapi/introduction)
+- [Swagger CLI Plugin](https://docs.nestjs.com/openapi/cli-plugin)

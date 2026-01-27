@@ -2,8 +2,12 @@
 
 ## 🧱 Repository パターンの導入
 
-TypeORM の `Repository` をラップして、ドメインごとのデータアクセスを整理する構成を作成。  
-Service 層との責務分離やテストのしやすさが向上。
+TypeORM の標準 `Repository` をそのまま使用するのではなく、独自の `Repository` クラスでラップ（隠蔽）する構成を採用します。
+これにより、以下のメリットが得られます。
+
+- **責務の明確化**: Service層がデータベースの特定のクエリビルド（TypeORMの関数）を意識しなくて済むようになります。
+- **テストの容易性**: データベースを実際に動かさなくても、Repositoryのモックを作成するだけでServiceのテストが可能になります。
+- **共通クエリの集約**: 「論理削除されていないデータのみ取得」といった共通条件を一箇所に閉じ込めることができます。
 
 ---
 
@@ -12,17 +16,20 @@ Service 層との責務分離やテストのしやすさが向上。
 ```txt
 src/
 ├── common/
-│   ├── repositories/
+│   ├── entities/          # 第3章で作成
+│   ├── repositories/      # 今回作成
 │   │   ├── article.repository.ts
 │   │   ├── user.repository.ts
 │   │   ├── user-info.repository.ts
 │   │   └── index.ts
-│   └── common.module.ts
+│   └── common.module.ts   # Repositoryを管理するモジュール
 ```
 
 ---
 
-## 📦 `UserRepository` の作成
+## 📦 各 Repository の実装
+
+### 1. UserRepository
 
 ```ts
 // src/common/repositories/user.repository.ts
@@ -56,13 +63,6 @@ export class UserRepository {
     });
   }
 
-  findByExternalId(externalId: string): Promise<User | null> {
-    return this.repo.findOne({
-      where: { externalId },
-      relations: ['info'],
-    });
-  }
-
   save(user: Partial<User>): Promise<User> {
     return this.repo.save(user);
   }
@@ -73,118 +73,24 @@ export class UserRepository {
 }
 ```
 
----
+### 2. UserInfoRepository / ArticleRepository
 
-## 📦 `UserInfoRepository` の作成
-
-```ts
-// src/common/repositories/user-info.repository.ts
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { UserInfo } from '../entities/user-info.entity';
-
-@Injectable()
-export class UserInfoRepository {
-  constructor(
-    @InjectRepository(UserInfo)
-    private readonly repo: Repository<UserInfo>,
-  ) {}
-
-  findAll(): Promise<UserInfo[]> {
-    return this.repo.find({ relations: ['user'] });
-  }
-
-  findById(id: number): Promise<UserInfo | null> {
-    return this.repo.findOne({
-      where: { id },
-      relations: ['user'],
-    });
-  }
-
-  save(info: Partial<UserInfo>): Promise<UserInfo> {
-    return this.repo.save(info);
-  }
-
-  async delete(id: number): Promise<void> {
-    await this.repo.delete(id);
-  }
-}
-```
+同様に、他の Entity についても `save`, `findAll`, `findById`, `delete` などの基本操作を実装します。
 
 ---
 
-## 📦 `ArticleRepository` の作成
+## 🧱 CommonModule への登録
 
-```ts
-// src/common/repositories/article.repository.ts
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Article } from '../entities';
-
-@Injectable()
-export class ArticleRepository {
-  constructor(
-    @InjectRepository(Article)
-    private readonly repo: Repository<Article>,
-  ) {}
-
-  findAll(): Promise<Article[]> {
-    return this.repo.find({ relations: ['author'] });
-  }
-
-  findById(id: number): Promise<Article | null> {
-    return this.repo.findOne({
-      where: { id },
-      relations: ['author'],
-    });
-  }
-
-  save(article: Partial<Article>): Promise<Article> {
-    return this.repo.save(article);
-  }
-
-  async delete(id: number): Promise<void> {
-    await this.repo.delete(id);
-  }
-}
-```
-
----
-
-## 🧩 Repository のエクスポート設定
-
-```ts
-// src/common/repositories/index.ts
-import { UserRepository } from './user.repository';
-import { UserInfoRepository } from './user-info.repository';
-import { ArticleRepository } from './article.repository';
-
-export const REPOSITORIES = [
-  UserRepository,
-  UserInfoRepository,
-  ArticleRepository,
-];
-
-export {
-  UserRepository,
-  UserInfoRepository,
-  ArticleRepository,
-};
-```
-
----
-
-## 🧱 `CommonModule` への登録
+作成した Repository を他の Module で利用できるようにエクスポートします。
 
 ```ts
 // src/common/common.module.ts
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ENTITIES } from './entities';
 import { REPOSITORIES } from './repositories';
 
+@Global() // プロジェクト全体で利用する場合は Global にすると便利
 @Module({
   imports: [TypeOrmModule.forFeature(ENTITIES)],
   providers: [...REPOSITORIES],
@@ -193,37 +99,54 @@ import { REPOSITORIES } from './repositories';
 export class CommonModule {}
 ```
 
-> 💡 `TypeOrmModule.forFeature()` により、指定した Entity の Repository を NestJS の DI コンテナに登録可能。
+---
+
+## 🧩 アプリケーションへの統合 (AppModule)
+
+`AppModule` に `CommonModule` を追加して、DI コンテナで Repository を管理できるようにします。
+
+```ts
+// src/app.module.ts
+import { Module } from '@nestjs/common';
+import { CommonModule } from './common/common.module';
+// ...他のインポート
+
+@Module({
+  imports: [
+    // ...ConfigModule, TypeOrmModule
+    CommonModule,
+  ],
+})
+export class AppModule {}
+```
 
 ---
 
-## ✅ 使用例（Service 層での注入）
+## ✅ 実装のポイントと使用例
+
+Service 層で Repository を注入して使用します。
 
 ```ts
 // src/user/user.service.ts
-import { Injectable } from '@nestjs/common';
-import { UserRepository } from '../common/repositories';
-
 @Injectable()
 export class UserService {
   constructor(private readonly userRepo: UserRepository) {}
 
-  async getUsers() {
+  async fetchAllUsers() {
+    // TypeORMの find() メソッドではなく、自分たちが定義した findAll() を呼ぶ
     return this.userRepo.findAll();
   }
 }
 ```
 
----
+### 📌 運用アドバイス
 
-## 📌 補足ポイント
-
-- Repository をラップすることで、複雑なクエリやトランザクション処理を集約可能  
-- テスト時にモックを差し替えやすくなり、ユニットテストの記述が容易  
-- 複数の Entity に対応する場合は、`REPOSITORIES` に追加するだけで拡張が可能  
+- **クエリの複雑化**: `QueryBuilder` を使うような複雑な結合クエリが必要になった際も、Repositoryクラス内に記述することで、Service層の可読性を保てます。
+- **リレーションの制御**: `relations: [...]` の指定を Repository 側に持たせることで、データの取得漏れを防げます。
 
 ---
 
 ## 📝 参照
 
-- <https://docs.nestjs.com/techniques/database#repository-pattern>
+- [NestJS Database Guide](https://docs.nestjs.com/techniques/database#repository-pattern)
+- [TypeORM Repository API](https://typeorm.io/repository-api)
