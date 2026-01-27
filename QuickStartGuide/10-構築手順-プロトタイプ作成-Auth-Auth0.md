@@ -49,10 +49,10 @@ NestJSアプリケーション側では、Auth0が発行するJWTを検証し、
 
 ## 🧪 アクセストークンの取得方法
 
-\```bash
-curl --request POST \
-  --url https://<YOUR_DOMAIN>/oauth/token \
-  --header 'content-type: application/json' \
+```bash
+curl --request POST 
+  --url https://<YOUR_DOMAIN>/oauth/token 
+  --header 'content-type: application/json' 
   --data '{
     "grant_type": "http://auth0.com/oauth/grant-type/password-realm",
     "username": "<USER_EMAIL>",
@@ -62,7 +62,7 @@ curl --request POST \
     "scope": "openid email profile",
     "realm": "Username-Password-Authentication"
   }'
-\```
+```
 
 ---
 
