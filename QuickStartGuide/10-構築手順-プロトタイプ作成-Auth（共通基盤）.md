@@ -180,10 +180,6 @@ export * from './auth-user.interface';
 #### `src/auth/auth.module.ts`
 
 ```ts
-import { Module } from '@nestjs/common';
-import { PassportModule } from '@nestjs/passport';
-import { ConfigModule } from '@nestjs/config';
-
 @Module({
   imports: [ConfigModule, PassportModule.register({})],
   providers: [

@@ -217,13 +217,8 @@ export * from './auth0-auth.guard';
 #### `src/auth/auth.module.ts`
 
 ```ts
-import { Module } from '@nestjs/common';
-import { PassportModule } from '@nestjs/passport';
-import { Auth0Strategy } from './strategies';
-import { Auth0AuthGuard } from './guards';
-
 @Module({
-  imports: [PassportModule.register({})],
+  imports: [ConfigModule, PassportModule.register({})],
   providers: [Auth0Strategy, Auth0AuthGuard],
   exports: [PassportModule, Auth0AuthGuard],
 })

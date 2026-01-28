@@ -225,13 +225,8 @@ export * from './cognito-auth.guard';
 #### `src/auth/auth.module.ts`
 
 ```ts
-import { Module } from '@nestjs/common';
-import { PassportModule } from '@nestjs/passport';
-import { CognitoStrategy } from './strategies';
-import { CognitoAuthGuard } from './guards';
-
 @Module({
-  imports: [PassportModule.register({})],
+  imports: [ConfigModule, PassportModule.register({})],
   providers: [CognitoStrategy, CognitoAuthGuard],
   exports: [PassportModule, CognitoAuthGuard],
 })
