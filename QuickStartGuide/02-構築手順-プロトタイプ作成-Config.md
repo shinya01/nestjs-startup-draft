@@ -1,114 +1,114 @@
-# 02-構築手順 - プロトタイプ作成 - Config
+# 02-構築手順-プロトタイプ作成-Config
 
-## 📦 必要なパッケージのインストール
+## 🎯 目的
 
-設定機能に必要なパッケージの導入：
+環境変数（`.env`）を安全かつ柔軟に扱うため、`@nestjs/config` と `dotenv-flow` を導入します。
+環境ごとの切り替え（development/devcontainer/production）を自動化し、型安全な設定管理を実現します。
 
-```bash
-npm install --save @nestjs/config
-npm install --save joi
-npm install --save-dev @types/joi
+## 📂 この章で作成・修正するファイル
+
+この章の作業完了時には、以下のディレクトリ構成となります。
+
+```text
+.
+├── .env (新規作成)
+├── .env.development (新規作成)
+├── .env.production (新規作成)
+├── .env.devcontainer (新規作成)
+├── .gitignore (修正)
+├── package.json (修正)
+└── src/
+    ├── config/
+    │   ├── configuration.ts (新規作成)
+    │   ├── validation.ts (新規作成)
+    │   └── index.ts (新規作成)
+    ├── app.module.ts (修正)
+    ├── main.ts (修正)
+    ├── app.controller.ts (削除)
+    ├── app.controller.spec.ts (削除)
+    └── app.service.ts (削除)
 ```
 
 ---
 
-## 🧹 不要ファイルの削除
+## 🛠️ 構築手順
 
-NestJS の初期サンプルファイルの削除：
+### 1. 必要なパッケージのインストール
 
-- `src/app.controller.ts`
-- `src/app.controller.spec.ts`
-- `src/app.service.ts`
-
----
-
-## ⚙️ ConfigModule の設定
-
-### 基本設定
-
-- `isGlobal: true`  
-  → 全モジュールで `ConfigService` の利用を可能にする設定。
-
-- `load`  
-  → 環境変数の構造化によるアクセス性の向上。  
-  例：`ConfigService.get('database.host')` のような参照。
-
-- `validationSchema`  
-  → `.env` の値を起動時に検証し、設定ミスの防止。
-
----
-
-## 🌱 dotenv-flow の導入
-
-`.env` ファイルの自動読み込みと環境ごとの切り替え管理のため、`dotenv-flow` を導入：
+設定管理とバリデーション（値の検証）に必要なライブラリを導入します。
 
 ```bash
+# NestJS公式の設定モジュール
+npm install --save @nestjs/config
+
+# バリデーション用ライブラリ
+npm install --save joi
+npm install --save-dev @types/joi
+
+# 環境別の.env管理用ライブラリ
 npm install dotenv-flow
 npm install --save-dev @types/dotenv-flow
 ```
 
-> 💡 補足：`dotenv-flow` による読み込みを行うため、NestJS 側では `ignoreEnvFile: true` の設定が必要。
+### 2. 不要ファイルの削除
 
----
-
-## 🗂️ `.env` ファイルの Git 管理
-
-`.env` ファイルが `.gitignore` に含まれている場合の対応手順：
-
-1. `.gitignore` を開く  
-2. 以下の記述を確認：
-
-    ```txt
-    .env
-    ```
-
-3. 削除またはコメントアウト：
-
-    ```diff
-    - .env
-    + # .env
-    ```
-
-> ⚠️ **注意**：`.env.production` や `.env.local` など、機密性の高いファイルは引き続き Git 管理から除外するのが一般的。  
-> チームで共有する場合は、`.env.example` を作成し、必要なキーのみを記載したテンプレートの用意がおすすめ。
-
----
-
-## 📚 読み込み順と優先順位
-
-例：`NODE_ENV=development` の場合の読み込み順：
-
-1. `.env`  
-2. `.env.development`  
-3. `.env.local`  
-4. `.env.development.local`
-
-> `dotenv-flow` は **後から読み込まれたファイルが優先される** ため、最終的な優先順位は以下の通り：
-
-```txt
-.env.development.local > .env.local > .env.development > .env
-```
-
----
-
-### 補足
-
-- `.local` が付いたファイルは、**個人のローカル環境用の上書き設定**としての利用。
-- `NODE_ENV` に応じた `.env.<env>` および `.env.<env>.local` の自動読み込み。
-- コマンドラインや OS 側で指定された環境変数は `.env` よりも優先され、**上書き不可**。
+初期状態で生成されているサンプルファイルを削除します。
 
 ```bash
-NODE_ENV=production DB_HOST=override.example.com node main.js
+rm src/app.controller.ts src/app.controller.spec.ts src/app.service.ts
 ```
 
----
+### 3. Git管理設定の調整
 
-## 🧪 実装
+`.env` ファイルを共有リポジトリで管理するため、`.gitignore` を修正します。
 
-### `validation.ts`
+```diff
+# .gitignore
+- .env
++ # .env (プロジェクトの共通設定として管理する場合)
+```
+
+### 4. 環境変数の定義
+
+各環境ごとの `.env` ファイルをルートディレクトリに作成します。
+
+#### `.env` (共通)
+
+```sh
+PORT=3000
+DB_PORT=5432
+DB_NAME=myapp
+```
+
+#### `.env.production` (本番環境用)
+
+```sh
+DB_HOST=prod.db.example.com
+DB_USER=produser
+DB_PASS=superpass
+```
+
+#### `.env.development` (開発環境用)
+
+```sh
+DB_HOST=dev.db.example.com
+DB_USER=devuser
+DB_PASS=devspass
+```
+
+#### `.env.devcontainer` (コンテナ開発用)
+
+```sh
+DB_HOST=db
+DB_USER=devuser
+DB_PASS=devpass
+```
+
+### 5. Config 実装
+
+#### `src/config/validation.ts`
 
 ```ts
-// src/config/validation.ts
 import * as Joi from 'joi';
 
 export const validationSchema = Joi.object({
@@ -126,13 +126,12 @@ export const validationSchema = Joi.object({
 });
 ```
 
----
+#### `src/config/configuration.ts`
 
-### `configuration.ts`
+※ `export const configuration` とすることで、再エクスポートを容易にします。
 
 ```ts
-// src/config/configuration.ts
-export default () => ({
+export const configuration = () => ({
   app: {
     env: process.env.NODE_ENV || 'development',
     port: parseInt(process.env.PORT || '3000', 10),
@@ -147,22 +146,32 @@ export default () => ({
 });
 ```
 
----
+#### `src/config/index.ts`
 
-### `app.module.ts`
+名前付きエクスポートをすべて再エクスポートします。
 
 ```ts
-// src/app.module.ts
+export * from './configuration';
+export * from './validation';
+```
+
+#### `src/app.module.ts`
+
+`ignoreEnvFile: true` を設定し、NestJS 標準の `.env` 読み込み機能を無効化します。
+
+> **💡 なぜ `ignoreEnvFile: true` にするのか？**
+> NestJS 標準の機能では単一の `.env` 読み込みに限定されます。今回は `dotenv-flow` を利用して `.env.development` や `.env.devcontainer` などの複数ファイルを環境に応じて動的に切り替えたいため、NestJS 側の重複読み込みによる競合を防ぐ目的で無効化しています。
+
+```ts
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import configuration from './config/configuration';
-import { validationSchema } from './config/validation';
+import { configuration, validationSchema } from './config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      ignoreEnvFile: true, // dotenv-flow による読み込みのため NestJS 側では無効化
+      ignoreEnvFile: true,
       load: [configuration],
       validationSchema,
     }),
@@ -171,19 +180,10 @@ import { validationSchema } from './config/validation';
 export class AppModule {}
 ```
 
----
-
-### `main.ts`
+#### `src/main.ts`
 
 ```ts
-// src/main.ts
-// 方法①（推奨）：自動読み込み
 import 'dotenv-flow/config';
-
-// 方法②：明示的な読み込み
-// import * as dotenvFlow from 'dotenv-flow';
-// dotenvFlow.config();
-
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
@@ -193,62 +193,17 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
   const port = configService.get<number>('app.port') || 3000;
+
   await app.listen(port);
 }
 void bootstrap();
 ```
 
----
+### 6. スクリプトの修正 (`package.json`)
 
-## 🧾 `.env` ファイルの例
+DevContainer 環境でアプリケーションを実行する際、常に `.env.devcontainer` が読み込まれるよう、起動スクリプトの先頭に `NODE_ENV=devcontainer` を付与します。
 
-### `.env`
-
-```sh
-## Environment Variables .env
-PORT=3000
-DB_PORT=5432
-DB_NAME=myapp
-```
-
----
-
-### `.env.development`
-
-```sh
-## Environment Variables .env.development
-DB_HOST=dev.db.example.com
-DB_USER=devuser
-DB_PASS=devspass
-```
-
----
-
-### `.env.production`
-
-```sh
-## Environment Variables .env.production
-DB_HOST=prod.db.example.com
-DB_USER=produser
-DB_PASS=superpass
-```
-
----
-
-### `.env.devcontainer`
-
-```sh
-## Environment Variables .env.devcontainer
-DB_HOST=db
-DB_USER=devuser
-DB_PASS=devpass
-```
-
----
-
-## 🧩 `package.json` の scripts 設定
-
-`NODE_ENV=devcontainer` を指定したスクリプトの追加：
+これにより、コンテナ内の DB 接続設定などが自動的に適用されます。
 
 ```json
   "scripts": {
@@ -267,7 +222,14 @@ DB_PASS=devpass
   },
 ```
 
+---
+
+## ✅ 完了確認
+
+- [ ] `npm run start:dev` で正常に起動すること
+- [ ] ターミナルにバリデーションエラーが表示されていないこと（`.env.devcontainer` の内容が正しく検証されていること）
+
 ## 📝 参照
 
-- <https://docs.nestjs.com/techniques/configuration>
-- <https://github.com/kerimdzhanov/dotenv-flow>
+- [NestJS Configuration](https://docs.nestjs.com/techniques/configuration)
+- [dotenv-flow GitHub](https://github.com/kerimdzhanov/dotenv-flow)

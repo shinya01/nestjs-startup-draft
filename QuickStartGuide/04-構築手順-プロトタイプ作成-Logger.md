@@ -1,41 +1,55 @@
-# 04-構築手順 - プロトタイプ作成 - Logger
+# 04-構築手順-プロトタイプ作成-Logger
 
-## 🔊 高速ロガー `pino` の導入
+## 🎯 目的
 
-[pino](https://github.com/pinojs/pino) は超高速かつ高機能な Node.js ロガー。  
-ECS × NestJS × JSON ログの構成に最適で、CloudWatch・Datadog・Fluent Bit との連携にも強みを発揮。
+アプリケーションの動作状況を把握するため、高速なロガーである `pino` を導入します。
+開発環境では人間が見やすい整形ログ（pino-pretty）を出力し、本番環境では構造化された JSON ログを出力することで、CloudWatch や Datadog 等の監視ツールとの親和性を高めます。
+
+## 📂 この章で作成・修正するファイル
+
+作業完了時には、以下のディレクトリ構成となります。
+
+```text
+.
+├── src/
+│   ├── app.module.ts (修正)
+│   └── main.ts (修正)
+└── package.json (修正: 依存ライブラリ追加)
+```
 
 ---
 
-## 📦 必要パッケージのインストール
+## 🛠️ 構築手順
+
+### 1. 必要パッケージのインストール
+
+`pino` 本体と NestJS 統合用のモジュール、および開発用整形ライブラリをインストールします。
 
 ```bash
 npm install pino pino-pretty
 npm install --save nestjs-pino
 ```
 
-> 💡 `pino-pretty` は開発環境専用。本番環境では使用しない構成を推奨。
+> 💡 `pino-pretty` は開発環境専用です。本番環境ではパフォーマンス向上のため JSON 形式で直接出力します。
 
----
+### 2. AppModule への LoggerModule の追加
 
-## ⚙️ AppModule への LoggerModule の追加
-
-AppModuleにLoggerModuleを追加する。
+`LoggerModule` を非同期で初期化し、環境変数に応じてログレベルや出力形式を切り替える設定を行います。
 
 ```ts
 // src/app.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import configuration from './config/configuration';
-import { validationSchema } from './config/validation';
 import { LoggerModule } from 'nestjs-pino';
+import { configuration, validationSchema } from './config';
+import { ENTITIES } from './common/entities';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      ignoreEnvFile: true, // dotenv-flow による読み込みのため NestJS 側では無効化
+      ignoreEnvFile: true,
       load: [configuration],
       validationSchema,
     }),
@@ -43,14 +57,14 @@ import { LoggerModule } from 'nestjs-pino';
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
-        host: config.get('database.host'),
-        port: config.get('database.port'),
-        username: config.get('database.user'),
-        password: config.get('database.pass'),
-        database: config.get('database.name'),
-        entities: [__dirname + '/common/entities/*.entity{.ts,.js}'],
-        logging: config.get('app.env') !== 'production', // 本番環境ではログを無効化
-        synchronize: false, // 自動同期を無効化
+        host: config.get<string>('database.host'),
+        port: config.get<number>('database.port'),
+        username: config.get<string>('database.user'),
+        password: config.get<string>('database.pass'),
+        database: config.get<string>('database.name'),
+        entities: ENTITIES,
+        logging: config.get('app.env') !== 'production',
+        synchronize: false,
       }),
       inject: [ConfigService],
     }),
@@ -59,6 +73,7 @@ import { LoggerModule } from 'nestjs-pino';
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
         pinoHttp: {
+          // 本番環境は info 以上、開発環境は debug 以上のログを出力
           level: config.get('app.env') === 'production' ? 'info' : 'debug',
           transport:
             config.get('app.env') !== 'production'
@@ -80,12 +95,9 @@ import { LoggerModule } from 'nestjs-pino';
 export class AppModule {}
 ```
 
-> 💡 `pino-pretty` により、開発中は見やすいログ出力が可能。  
-> 本番環境では JSON ログが出力され、ログ収集ツールとの連携が容易。
+### 3. `main.ts` の設定
 
----
-
-## 🚀 `main.ts` の設定
+NestJS 標準のロガーを `nestjs-pino` に差し替えます。
 
 ```ts
 // src/main.ts
@@ -96,9 +108,10 @@ import { ConfigService } from '@nestjs/config';
 import { Logger } from 'nestjs-pino';
 
 async function bootstrap() {
-  // nestjs-pino のロガーを使用するため bufferLogs: true を指定
+  // Logger 初期化までのログを保持するため bufferLogs: true を指定
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
-  // nestjs-pino のロガーをアプリケーションのロガーとして設定
+  
+  // アプリケーション全体のロガーを nestjs-pino に差し替え
   app.useLogger(app.get(Logger));
 
   const configService = app.get(ConfigService);
@@ -108,37 +121,40 @@ async function bootstrap() {
 void bootstrap();
 ```
 
-> 💡 `bufferLogs: true` により、ロガー初期化前のログもバッファリングして出力。
+> **💡 なぜ `bufferLogs: true` にするのか？**
+> NestJS の起動プロセス（モジュールのロードなど）中に発生するログをメモリ内にバッファリングし、`pino` ロガーが準備できたタイミングで一括出力するためです。これにより、起動直後のログも `pino` の形式で記録されます。
 
 ---
 
-## 🧩 サービス内でのログ出力
+## 🧩 実装例：サービス内でのログ出力
+
+サービスやコントローラー内でログを出力する場合は、NestJS 標準の `Logger` クラスをインスタンス化して使用します。内部的に `pino` が呼び出されます。
 
 ```ts
 import { Injectable, Logger } from '@nestjs/common';
 
 @Injectable()
 export class SampleService {
+  // クラス名を指定することで、ログのコンテキストに表示される
   private readonly logger = new Logger(SampleService.name);
 
   doSomething() {
-    this.logger.log('何か処理を実行しました');
+    this.logger.log('処理を開始しました');
+    this.logger.debug('詳細なデバッグ情報');
+    this.logger.error('エラーが発生した場合');
   }
 }
 ```
 
 ---
 
-## ✅ 補足ポイント
+## ✅ 完了確認
 
-- `nestjs-pino` は NestJS に自然に統合できるロガーモジュール  
-- DI（依存性注入）に対応し、サービスやコントローラー内でも簡単にログ出力が可能  
-- 開発環境では整形されたログ、本番環境では JSON ログを出力する構成が実現可能  
-
----
+- [ ] `npm run start:dev` を実行し、ターミナルに色付けされた整形ログが表示されること
+- [ ] `http://localhost:3000` へのアクセス時、HTTP リクエストログ（メソッド、パス、レスポンスタイム等）が出力されること
 
 ## 📝 参照
 
-- <https://docs.nestjs.com/techniques/logger>
-- <https://github.com/pinojs/pino>
-- <https://github.com/pinojs/pino-pretty>
+- [NestJS Logger](https://docs.nestjs.com/techniques/logger)
+- [Pino GitHub](https://github.com/pinojs/pino)
+- [nestjs-pino GitHub](https://github.com/iamolegga/nestjs-pino)

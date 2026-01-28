@@ -1,31 +1,40 @@
-# 06-構築手順 - プロトタイプ作成 - Repository
+# 06-構築手順-プロトタイプ作成-Repository
 
-## 🧱 Repository パターンの導入
+## 🎯 目的
 
-TypeORM の `Repository` をラップして、ドメインごとのデータアクセスを整理する構成を作成。  
-Service 層との責務分離やテストのしやすさが向上。
+TypeORM の `Repository` をラップした独自のリポジトリ層を導入し、データアクセスロジックを共通化します。
+これにより、サービス層からのデータベース操作をシンプルにし、保守性とテストのしやすさを向上させます。
 
----
+## 📂 この章で作成・修正するファイル
 
-## 📁 ディレクトリ構成
+作業完了時には、以下のディレクトリ構成となります。
 
-```txt
+```text
 src/
 ├── common/
-│   ├── repositories/
+│   ├── entities/ (既存)
+│   ├── repositories/ (新規作成)
 │   │   ├── article.repository.ts
 │   │   ├── user.repository.ts
 │   │   ├── user-info.repository.ts
 │   │   └── index.ts
-│   └── common.module.ts
+│   └── common.module.ts (新規作成)
+└── app.module.ts (修正)
 ```
 
 ---
 
-## 📦 `UserRepository` の作成
+## 🛠️ 構築手順
+
+### 1. 各 Repository の作成
+
+ドメインごとにデータアクセス用のメソッドを定義したクラスを作成します。
+
+#### `src/common/repositories/user.repository.ts`
+
+※ `articles` は OneToMany のため、デフォルトの取得対象から除外しています。
 
 ```ts
-// src/common/repositories/user.repository.ts
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -39,13 +48,14 @@ export class UserRepository {
   ) {}
 
   findAll(): Promise<User[]> {
-    return this.repo.find({ relations: ['info', 'articles'] });
+    // articles は含めず、OneToOne の info のみ取得
+    return this.repo.find({ relations: ['info'] });
   }
 
   findById(id: number): Promise<User | null> {
     return this.repo.findOne({
       where: { id },
-      relations: ['info', 'articles'],
+      relations: ['info'],
     });
   }
 
@@ -58,7 +68,7 @@ export class UserRepository {
 
   findByExternalId(externalId: string): Promise<User | null> {
     return this.repo.findOne({
-      where: { externalId },
+      where: { externalId }, // externalId で検索
       relations: ['info'],
     });
   }
@@ -73,12 +83,9 @@ export class UserRepository {
 }
 ```
 
----
-
-## 📦 `UserInfoRepository` の作成
+#### `src/common/repositories/user-info.repository.ts`
 
 ```ts
-// src/common/repositories/user-info.repository.ts
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -112,12 +119,9 @@ export class UserInfoRepository {
 }
 ```
 
----
-
-## 📦 `ArticleRepository` の作成
+#### `src/common/repositories/article.repository.ts`
 
 ```ts
-// src/common/repositories/article.repository.ts
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -151,12 +155,13 @@ export class ArticleRepository {
 }
 ```
 
----
+### 2. Repository のエクスポート設定 (Barrelファイル)
 
-## 🧩 Repository のエクスポート設定
+他のモジュールから一括で扱えるよう、`index.ts` を作成します。
+
+#### `src/common/repositories/index.ts`
 
 ```ts
-// src/common/repositories/index.ts
 import { UserRepository } from './user.repository';
 import { UserInfoRepository } from './user-info.repository';
 import { ArticleRepository } from './article.repository';
@@ -167,24 +172,24 @@ export const REPOSITORIES = [
   ArticleRepository,
 ];
 
-export {
-  UserRepository,
-  UserInfoRepository,
-  ArticleRepository,
-};
+export * from './user.repository';
+export * from './user-info.repository';
+export * from './article.repository';
 ```
 
----
+### 3. CommonModule の作成と登録
 
-## 🧱 `CommonModule` への登録
+Entity と Repository を管理する `CommonModule` を作成します。
+
+#### `src/common/common.module.ts`
 
 ```ts
-// src/common/common.module.ts
-import { Module } from '@nestjs/common';
+import { Module, Global } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ENTITIES } from './entities';
 import { REPOSITORIES } from './repositories';
 
+@Global()
 @Module({
   imports: [TypeOrmModule.forFeature(ENTITIES)],
   providers: [...REPOSITORIES],
@@ -193,11 +198,30 @@ import { REPOSITORIES } from './repositories';
 export class CommonModule {}
 ```
 
-> 💡 `TypeOrmModule.forFeature()` により、指定した Entity の Repository を NestJS の DI コンテナに登録可能。
+### 4. AppModule への登録
+
+作成した `CommonModule` を `AppModule` の `imports` に追加します。
+
+#### `src/app.module.ts`
+
+```ts
+// ... 既存の import
+import { CommonModule } from './common/common.module';
+
+@Module({
+  imports: [
+    // ... 既存の設定
+    CommonModule,
+  ],
+})
+export class AppModule {}
+```
 
 ---
 
-## ✅ 使用例（Service 層での注入）
+## ✅ 実装イメージ（Service 層での注入例）
+
+`CommonModule` を `@Global()` に設定しているため、各機能モジュールで再度 import することなく、コンストラクタで注入するだけで Repository を利用できます。
 
 ```ts
 // src/user/user.service.ts
@@ -218,12 +242,10 @@ export class UserService {
 
 ## 📌 補足ポイント
 
-- Repository をラップすることで、複雑なクエリやトランザクション処理を集約可能  
-- テスト時にモックを差し替えやすくなり、ユニットテストの記述が容易  
-- 複数の Entity に対応する場合は、`REPOSITORIES` に追加するだけで拡張が可能  
-
----
+- **リレーションの制御**: `User` から `Article` (OneToMany) を取得するとデータ肥大化の原因になるため、リポジトリ層で適切に `relations` を制御しています。
+- **`@Global()` の使用**: プロジェクト全体で共通のリポジトリ層を利用可能にしています。
+- **テストの容易性**: Repository クラスを DI することで、Service の単体テスト時にモック化が容易になります。
 
 ## 📝 参照
 
-- <https://docs.nestjs.com/techniques/database#repository-pattern>
+- [NestJS Database: Repository Pattern](https://docs.nestjs.com/techniques/database#repository-pattern)

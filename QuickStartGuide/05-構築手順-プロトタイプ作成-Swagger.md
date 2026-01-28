@@ -1,41 +1,59 @@
-# 05-構築手順 - プロトタイプ作成 - Swagger
+# 05-構築手順-プロトタイプ作成-Swagger
 
-## 📘 Swagger の導入
+## 🎯 目的
 
-[Swagger](https://swagger.io/) は API ドキュメントを自動生成・可視化できるツール。  
-NestJS では `@nestjs/swagger` を使うことで、簡単に導入が可能。
+API の仕様を可視化し、ブラウザ上で動作確認を行えるようにするため [Swagger (OpenAPI)](https://swagger.io/) を導入します。
+API のタイトルやバージョンなどのメタ情報を環境変数で管理し、本番環境ではドキュメントを非公開にする制御を実装します。
+
+## 📂 この章で作成・修正するファイル
+
+作業完了時には、以下のディレクトリ構成となります。
+
+```text
+.
+├── .env (修正)
+├── src/
+│   ├── config/
+│   │   ├── configuration.ts (修正)
+│   │   └── validation.ts (修正)
+│   └── main.ts (修正)
+└── package.json (修正: 依存ライブラリ追加)
+```
 
 ---
 
-## 📦 必要パッケージのインストール
+## 🛠️ 構築手順
+
+### 1. 必要パッケージのインストール
+
+NestJS 用の Swagger モジュールをインストールします。
 
 ```bash
 npm install --save @nestjs/swagger
 ```
 
----
+### 2. 環境変数の追加
 
-## ⚙️ `.env` への環境変数の追加
-
-環境変数`SWAGGER_XXXX`を追加する
+Swagger の表示に使用する情報を `.env` に追記します。
 
 ```sh
-## Environment Variables .env
-PORT=3000
-DB_PORT=5432
-DB_NAME=myapp
+## .env 
+# (既存の設定は維持)
 SWAGGER_TITLE=My Awesome API
 SWAGGER_DESCRIPTION=This is the best API server.
 SWAGGER_VERSION=1.0.0
 ```
 
----
+### 3. Config 実装の更新
 
-## 🧩 `configuration.ts` への設定の追加
+追加した環境変数をアプリケーションから扱えるよう、Config 関連ファイルを修正します。
+
+#### `src/config/configuration.ts`
+
+第2章で決めた「名前付きエクスポート」の形式を維持して追記します。
 
 ```ts
-// src/config/configuration.ts
-export default () => ({
+export const configuration = () => ({
   app: {
     env: process.env.NODE_ENV || 'development',
     port: parseInt(process.env.PORT || '3000', 10),
@@ -55,12 +73,11 @@ export default () => ({
 });
 ```
 
----
+#### `src/config/validation.ts`
 
-## ✅ `validation.ts` へのバリデーションの追加
+起動時に設定漏れがないかチェックするためのバリデーションを追加します。
 
 ```ts
-// src/config/validation.ts
 import * as Joi from 'joi';
 
 export const validationSchema = Joi.object({
@@ -82,9 +99,9 @@ export const validationSchema = Joi.object({
 });
 ```
 
----
+### 4. `main.ts` への Swagger 組み込み
 
-## 🚀 `main.ts` への Swagger 組み込み
+ConfigService から設定を読み込み、Swagger UI を有効化します。
 
 ```ts
 // src/main.ts
@@ -101,13 +118,16 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
 
-  // Swagger の設定
+  // Swagger の設定構築
   const swaggerConfig = new DocumentBuilder()
-    .setTitle(configService.get<string>('swagger.title') || '')
+    .setTitle(configService.get<string>('swagger.title') || 'NestJS API')
     .setDescription(configService.get<string>('swagger.description') || '')
-    .setVersion(configService.get<string>('swagger.version') || '')
+    .setVersion(configService.get<string>('swagger.version') || '1.0.0')
     .build();
+
   const document = SwaggerModule.createDocument(app, swaggerConfig);
+
+  // production 環境以外（development, devcontainer 等）の場合のみ Swagger UI を公開
   if (configService.get('app.env') !== 'production') {
     SwaggerModule.setup('swagger', app, document);
   }
@@ -118,18 +138,19 @@ async function bootstrap() {
 void bootstrap();
 ```
 
-> 💡 Swagger UI は `http://localhost:3000/swagger` で確認可能。
-
 ---
+
+## ✅ 完了確認
+
+- [ ] `npm run start:dev` でアプリを起動し、ターミナルにエラーが出ないこと
+- [ ] ブラウザで `http://localhost:3000/swagger` にアクセスし、Swagger UI が表示されること
+- [ ] `.env` で設定したタイトルや説明文が画面上に反映されていること
 
 ## 📌 補足ポイント
 
-- `DocumentBuilder` により、API のタイトル・説明・バージョンを `.env` から動的に設定可能  
-- `SwaggerModule.setup()` の第1引数 `'swagger'` は URL パスとして任意に変更可能  
-- 本番環境では `NODE_ENV` を条件に Swagger を無効化する構成が推奨  
-
----
+- **環境による公開制限**: セキュリティの観点から、本番環境（`production`）では `SwaggerModule.setup` を呼び出さない構成にしています。
+- **エンドポイントの変更**: `SwaggerModule.setup('swagger', ...)` の第1引数を書き換えることで、ドキュメントの URL パス（例：`/docs` や `/api-spec`）を自由に変更可能です。
 
 ## 📝 参照
 
-- <https://docs.nestjs.com/openapi/introduction>
+- [NestJS OpenAPI (Swagger)](https://docs.nestjs.com/openapi/introduction)
